@@ -58,17 +58,22 @@ int mkdir(char pathname[]) {
 			parentDir = cwd;
 		}
 		printf("Parent dir assigned as %s\n", parentDir->name);
-		if(parentDir != NULL) {
+		if(parentDir != NULL && search(parentDir->childPtr, &basename, 'A') == NULL) { //Make sure we have a parent and filename doesn't already exist
 			oldestSibling = getLastChild(parentDir);
 			newDir = (Node *)malloc(sizeof(Node));
 			newDir->type = 'D';
 			strcpy(newDir->name, basename);
 			newDir->siblingPtr = newDir->childPtr = NULL;
+			if(parentDir->childPtr == NULL) {
+				parentDir->childPtr = newDir;
+			}
 			newDir->parentPtr = parentDir;
-			parentDir->childPtr = newDir;
-			oldestSibling->siblingPtr = newDir; //Sets sibling pointer so it can be accessed again
+			if(oldestSibling != NULL) {
+				oldestSibling->siblingPtr = newDir; //Sets sibling pointer so it can be accessed again
+			}
 			return 0;
 		} else {
+			printf("Invalid directory or filename\n");
 			return 0;
 		}
 	}
@@ -89,30 +94,23 @@ int rmdir(char pathname[]) {
 }
 
 int cd(char pathname[]) {
-	printf("cd coming soon\n");
-	return 0;
 	//parse path
 		//if NULL, set to root
 		//if relative, follow path while checking if dir exists and is actually a dir
 		//if absolute, scan path from root	
 	//if valid and a dir
 		//set cwd to that dir
+	//printf("cd coming soon\n");
+	Node* temp = followPath(pathname);
+	if(temp != NULL) {
+		cwd = temp;
+	} else {
+		printf("No such file or directory\n");
+	}
+	return 0;
 }
 
 int ls(char pathname[]) {
-	Node* current;
-	printf("cwd: %s\n", cwd->name);
-	if(strlen(pathname) == 0) { //No path provided
-		if(cwd->childPtr != NULL) {
-			current = cwd->childPtr;
-			do {
-				printf("%s\n", current->name);
-				current = current->siblingPtr;
-			} while(current != NULL);
-		}
-	} else {
-		printf("ls for other dirs coming soon\n");
-	}
 	//if NULL, print pwd
 	//if not NULL,
 		//verify path is good
@@ -122,26 +120,47 @@ int ls(char pathname[]) {
 		//go to sibling
 		//print off name
 		//repeat
+	Node* current;
+	printf("cwd: %s\n", cwd->name);
+	if(strlen(pathname) == 0) { //No path provided
+		if(cwd->childPtr != NULL) {
+			current = cwd->childPtr;
+		}
+	} else {
+		current = followPath(pathname);
+		printf("ls for other dirs coming soon\n");
+	}
+	do {
+		printf("%s\n", current->name);
+		current = current->siblingPtr;
+	} while(current != NULL);
+
 	return 0;
 }
 
 int pwd(char pathname[]) {
+	//ignore pathname[]
+	//call rpwd with cwd node	
+	rpwd(cwd);
 	printf("pwd coming soon\n");
 	return 0;
-	//ignore pathname[]
-	//call rpwd with cwd node
-
 }
 
 int rpwd(Node *dir) {
-	printf("rpwd coming soon\n");
-	return 0;
 	//if dir->parent == dir->child or dir->name == "/" (root)
 		//print dir->name
 		//return
 	//else
 		//call rpwd with parent of dir
 		//print dir->name
+	if(dir->parentPtr == dir->siblingPtr) { //check if root node
+		return 0;
+	} else {
+		rpwd(dir->parentPtr);
+		printf("/%s\n", dir->name);
+		return 0;
+	}
+	printf("rpwd coming soon\n");
 }
 
 int creat(char pathname[]) {
@@ -174,6 +193,7 @@ int save(char filename[]) {
 	printf("save coming soon\n");
 	return 0;
 	//file name is what we are saving to
+
 	//open file
 	//call rsave with root
 	//close file
@@ -213,15 +233,24 @@ int quit(char filename[]) {
 }
 
 Node* search(Node* startingPtr,char *basename, char type) {
+	printf("searching for '%s' of type '%c' from '%s'\n", basename, type, startingPtr->name);
 	Node *current = startingPtr;
-	printf("search coming soon\n");
-	return 0;
 	//Go to parent, return to first child. Makes sure we have the first sibling
 	//Node* current = (startingPtr->parentPtr)->childPtr;
-	while(current->siblingPtr != NULL && strcmp(current->name, basename) != 0) {
-		current = current->siblingPtr;
-		if(strcmp(current->name, basename) == 0 && type == current->type) {
-			return current;
+	if(current == NULL) {
+		return current;
+	} else if(strcmp(startingPtr->name, "/") == 0) {
+		return NULL; //We won't find anything if we try to search from root as it's sibling pointer is itself
+	} else if(strcmp(basename, current->name) == 0) { //if the first child is what we are looking for
+		return current;
+	} else {
+		while(current->siblingPtr != NULL && strcmp(current->name, basename) != 0) {
+			current = current->siblingPtr;
+			if(strcmp(current->name, basename) == 0) {
+				if(type == 'A' || type == current->type) { //Checks if type is correct. 'a' flag denotes any type is fine
+					return current;
+				}
+			}
 		}
 	}
 
@@ -269,7 +298,9 @@ char* getNextDir(char path[]) {
 //Scans until the last dir and returns that so we can easily add dirs to the end
 Node* getLastChild(Node* dir) {
 	Node* current = dir;
-	if(current->childPtr != NULL) {
+	if(current->childPtr == NULL) {
+		return NULL;
+	} else if(current->childPtr != NULL) {
 		current = current->childPtr;
 		while(current->siblingPtr != NULL) {
 			current = current->siblingPtr;
@@ -296,7 +327,10 @@ Node* followPath(char path[]) {
 	if(path[0] == '/') { //absolute path
 		current = root->childPtr;
 	} else {
-		current = cwd->childPtr;
+		current = cwd;
+		if(cwd == root) {
+			current = current->childPtr; //Following path from root is iffy
+		}
 	}
 	if(current != NULL) {
 		printf("following path from: %s\n", current->name);
@@ -329,7 +363,11 @@ Node* followPath(char path[]) {
 		i = 0;
 		printf("starting to traverse path\n");
 		while(valid && i < numDirs) {
-			current = search(current, dirs[i], 'D'); //Look for dir
+			if(strcmp(dirs[i], "..") == 0) {
+				current = current->parentPtr;
+			} else {
+				current = search(current, dirs[i], 'D'); //Look for dir
+			}
 			if(current == NULL) {
 				valid = 0;
 				printf("Directory does not exist\n");
