@@ -1,2 +1,2 @@
 lab1: main.c source.c
-	gcc -o lab1 main.c source.c -I. -g -w -m32
+	gcc -m32 -o lab1 main.c source.c -I. -g -w

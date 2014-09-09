@@ -17,9 +17,7 @@ char basename[64] = "";
 main() {
 	initialize();      /* initialize the / DIR of the tree */
 	while(1){
-		printf("User:");
-		inlinePWD(); //prints pwd for reference
-		printf("$ ");
+		printf("User:%s$ ", getPWD(NULL));
 		gets(line);
 		parseLine(line);
 		//read a line containting  command [pathname]; // [ ] means optional
@@ -35,16 +33,6 @@ main() {
 			break;
 		}
 	}
-}
-
-void initialize() {
-	root = (Node*)malloc(sizeof(Node));
-	strcpy(root->name, "/");
-	root->type = 'D';
-	root->childPtr = NULL;
-	root->siblingPtr = root;
-	root->parentPtr = root;
-	cwd = root;
 }
 
 void parseLine(char line[]) {

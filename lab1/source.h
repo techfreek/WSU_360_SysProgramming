@@ -13,11 +13,12 @@ typedef struct Node {
 	struct Node *parentPtr;
 } Node;
 
+void initialize();
 int mkdir(char[]);
 int rmdir(char[]);
 int cd(char[]);
 int ls(char[]);
-int inlinePWD();
+char* getPWD();
 int pwd(char[]);
 int creat(char[]);
 int rm(char[]);
