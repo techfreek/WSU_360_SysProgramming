@@ -46,6 +46,7 @@ int mkdir(char pathname[]) {
 		if(temp == NULL) {
 			strcpy(basename, pathname);
 		} else {
+
 			strcpy(basename, temp);
 		}
 
@@ -58,7 +59,7 @@ int mkdir(char pathname[]) {
 			parentDir = cwd;
 		}
 		printf("Parent dir assigned as %s\n", parentDir->name);
-		if(parentDir != NULL && search(parentDir->childPtr, &basename, 'A') == NULL) { //Make sure we have a parent and filename doesn't already exist
+		if(parentDir != NULL && search(parentDir, &basename, 'A') == NULL) { //Make sure we have a parent and filename doesn't already exist
 			oldestSibling = getLastChild(parentDir);
 			newDir = (Node *)malloc(sizeof(Node));
 			newDir->type = 'D';
@@ -138,11 +139,17 @@ int ls(char pathname[]) {
 	return 0;
 }
 
+int inlinePWD() {
+	rpwd(cwd);
+	printf("/");
+	return 0;
+}
+
 int pwd(char pathname[]) {
 	//ignore pathname[]
 	//call rpwd with cwd node	
 	rpwd(cwd);
-	printf("pwd coming soon\n");
+	printf("/\n");
 	return 0;
 }
 
@@ -157,10 +164,9 @@ int rpwd(Node *dir) {
 		return 0;
 	} else {
 		rpwd(dir->parentPtr);
-		printf("/%s\n", dir->name);
+		printf("/%s", dir->name);
 		return 0;
 	}
-	printf("rpwd coming soon\n");
 }
 
 int creat(char pathname[]) {
@@ -232,26 +238,31 @@ int quit(char filename[]) {
 	save("bahm_fs.txt");
 }
 
-Node* search(Node* startingPtr,char *basename, char type) {
-	printf("searching for '%s' of type '%c' from '%s'\n", basename, type, startingPtr->name);
-	Node *current = startingPtr;
-	//Go to parent, return to first child. Makes sure we have the first sibling
-	//Node* current = (startingPtr->parentPtr)->childPtr;
-	if(current == NULL) {
-		return current;
-	} else if(strcmp(startingPtr->name, "/") == 0) {
-		return NULL; //We won't find anything if we try to search from root as it's sibling pointer is itself
-	} else if(strcmp(basename, current->name) == 0) { //if the first child is what we are looking for
-		return current;
-	} else {
-		while(current->siblingPtr != NULL && strcmp(current->name, basename) != 0) {
-			current = current->siblingPtr;
-			if(strcmp(current->name, basename) == 0) {
-				if(type == 'A' || type == current->type) { //Checks if type is correct. 'a' flag denotes any type is fine
-					return current;
+Node* search(Node* parent,char *basename, char type) {
+	Node *current = parent->childPtr; //Get to the childptr to look for those
+	if(current != NULL) {
+		printf("searching for '%s' of type '%c' from '%s'\n", basename, type, current->name);
+		//Go to parent, return to first child. Makes sure we have the first sibling
+		//Node* current = (startingPtr->parentPtr)->childPtr;
+		if(current == NULL) {
+			return current;
+		} else if(strcmp(current->name, "/") == 0) {
+			return NULL; //We won't find anything if we try to search from root as it's sibling pointer is itself
+		} else if(strcmp(basename, current->name) == 0) { //if the first child is what we are looking for
+			return current;
+		} else {
+			do {
+				if(strcmp(current->name, basename) == 0) {
+					if(type == 'A' || type == current->type) { //Checks if type is correct. 'a' flag denotes any type is fine
+						return current;
+					}
 				}
-			}
+				current = current->siblingPtr;
+				printf("Still looking for %s, currently at %s", basename, current->name);
+			} while(current->siblingPtr != NULL && strcmp(current->name, basename) != 0);
 		}
+	} else {
+		printf("parent->childPtr is null\n");
 	}
 
 	//we are out of the loop here, AKA we didn't find it
@@ -313,6 +324,7 @@ Node* getLastChild(Node* dir) {
 Node* followPath(char path[]) {
 	char *dirs[64]; //Techincal limit of 32 for either, round up to be safe
 	char backup[64];
+	char *temp;
 	int i = 1,
 		numDirs = 0,
 		found = 0,
@@ -328,9 +340,9 @@ Node* followPath(char path[]) {
 		current = root->childPtr;
 	} else {
 		current = cwd;
-		if(cwd == root) {
-			current = current->childPtr; //Following path from root is iffy
-		}
+		/*if(cwd == root) {
+			current = current; //Following path from root is iffy
+		}*/
 	}
 	if(current != NULL) {
 		printf("following path from: %s\n", current->name);
@@ -340,21 +352,41 @@ Node* followPath(char path[]) {
 			dirs[i] = malloc(64 * sizeof(char)); //allocate max of 64 chars in the array
 		}
 		printf("done allocting memory\n");
-		if(strchr(backup, '/') == 0) { //only 1 dir deep
+		if(strchr(backup, '/') == NULL) { //looks for a slash (sign of multiple dirs) only 1 dir deep
+			printf("only 1 dir deep\n");
 			strcpy(dirs[0], backup);
 			numDirs = 1;
 		} else {
-			printf("first tok: %s\n", strtok(backup, '/'));
-			strcpy(dirs[0], strtok(path, '/'));
-			numDirs++;
-			i = 1;
+			printf("multiple dirs\n");
+			printf("backup: %s\n", backup);
+
+			//strcpy(dirs[0], strtok(backup, "/"));
+
+			/*for (temp = strtok(backup," "); temp != NULL; temp = strtok(NULL, " "))
+			{
+				puts(temp);
+			}*/
+
+			temp = strtok(backup, "/");
+
+			//printf("first tok: %s\n", dirs[0]);
+			//numDirs++;
+			i = 0;
 			printf("first strtok done\n");
-			while(dirs[i-1] != NULL) {
-				strcpy(dirs[i], strtok(NULL, '/'));
-				//dirs[i] = strtok(NULL, '/');
-				numDirs++;
+
+			while(temp != NULL) {
+				printf("temp = %s\n", temp);
+				dirs[i] = temp;
 				i++;
-			} //populates array with the dir names
+				numDirs++;
+				temp = strtok(NULL, "/");
+			}
+			printf("Dirs: ");
+			for (i = 0; i < numDirs; i++)
+			{
+				printf("%s, ", dirs[i]);
+			}
+			printf("\n");
 		}
 
 		printf("done parsing path\n");
@@ -392,12 +424,7 @@ char* chopNChars(char str[], int chars) {
 	if(chars > str_len) { //Don't even try if I am supposed to chop off more characters than I have
 		return NULL;
 	} else {
-		//memmove(newStr, str + chars, str_len - chars + 1); //shifts chars over
-		
 		strncpy(temp, str + 1, str_len - 1);
-		printf("made it past memmove\n");
-		/*printf("made it past memmove\n");
-		strcpy(temp, newStr);*/
 		printf("newStr = %s\n", temp);
 		return temp;
 	}

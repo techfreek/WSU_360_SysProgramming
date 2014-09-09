@@ -17,7 +17,9 @@ char basename[64] = "";
 main() {
 	initialize();      /* initialize the / DIR of the tree */
 	while(1){
-		printf("User: "); //Add pwd to the prompt?
+		printf("User:");
+		inlinePWD(); //prints pwd for reference
+		printf("$ ");
 		gets(line);
 		parseLine(line);
 		//read a line containting  command [pathname]; // [ ] means optional
@@ -77,7 +79,7 @@ int findCommand(char command[]) {
 		return 7;
 	} else if(strcmp(command, "reload") == 0) {
 		return 8;
-	} else if(strcmp(command, "quit") == 0) {
+	} else if(strcmp(command, "quit") == 0 || strcmp(command, "q") == 0 ) {
 		return 9;
 	} else {
 		return -1;
