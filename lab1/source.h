@@ -24,5 +24,6 @@ int creat(char[]);
 int rm(char[]);
 int save(char[]);
 int reload(char[]);
+int quit(char[]);
 
 #endif

@@ -22,33 +22,26 @@ Node* search(Node*,char*, char);
 char* chopNChars(char[], int);
 
 int mkdir(char pathname[]) {
+	//Calls the generalized make function to make a Node of type 'D'
 	return make(pathname, 'D');
 }
 
 int rmdir(char pathname[]) {
+	//Calls generalized remove function to look for the specified 'D' and delete it if possible
 	return removefile(pathname, 'D');
-	//parse path
-		//if relative, follow path while checking if dir exists and is actually a dir
-		//if absolute, scan path from root	
-	//If the path is valid, check if basename exists and is a dir
-		//if so, check if there are any child points
-			//if no, we can delete
-				//go to parent, and if it is the childptr, set sibling pointer to basename's sibling
-				//delete node
-			//if yes, then print file can't be deleted
 }
 
 int cd(char pathname[]) {
-	//parse path
-		//if NULL, set to root
-		//if relative, follow path while checking if dir exists and is actually a dir
-		//if absolute, scan path from root	
-	//if valid and a dir
-		//set cwd to that dir
-	//printf("cd coming soon\n");
+	/*
+		If the path is valid (we can follow it)
+			change cwd to temp
+		else
+			print why
+	*/
+
 	Node* temp = followPath(pathname);
 	if(temp != NULL) {
-		if(temp->type == 'D') {
+		if(temp->type == 'D') { //Double check temp is actually a directory
 			cwd = temp;
 		} else {
 			printf("%s is not a directory\n", temp->name);
@@ -60,15 +53,20 @@ int cd(char pathname[]) {
 }
 
 int ls(char pathname[]) {
-	//if NULL, print pwd
-	//if not NULL,
-		//verify path is good
-	//if good path/NULL path
-		//go to child ptr
-		//print off filename
-		//go to sibling
-		//print off name
-		//repeat
+	/*
+		If path exists, follow path
+			if path is null
+				set path to null, AKA do nothing
+			else 
+				set current as the destination dir
+		else 
+			set current as destination dir
+
+		if exists, go to child of current
+			print file name
+			while siblingPtr exists, go to sibling and repeat
+	*/
+
 	Node* current;
 	printf("cwd: %s\n", cwd->name);
 	if(strlen(pathname) == 0) { //No path provided
@@ -82,42 +80,50 @@ int ls(char pathname[]) {
 	}
 	if(current != NULL) {
 		do {
-			printf("%s\n", current->name);
+			printf("%s\t", current->name);
 			current = current->siblingPtr;
 		} while(current != NULL);
 	}
+	printf("\n");
 
 	return 0;
 }
 
 char* getPWD(Node* source) {
+	//Allocates a string to have things appended to
 	char *pwdPath = malloc(sizeof(char) * 128);
-	strcpy(pwdPath, "");
+	strcpy(pwdPath, ""); //init it
 	if(source == NULL) {
 		source = cwd;
 	} else if(source == root) {
-		strcpy(pwdPath, "/");
+		strcpy(pwdPath, "/"); //if we start from root, return a hardcoded '/'
 		return pwdPath;
 	}
-	rpwd(source, pwdPath);
+	rpwd(source, pwdPath); //if not root, recursively call to print off all files
 	return pwdPath;
 }
 
 int pwd(char pathname[]) {
 	//ignore pathname[]
 	//call rpwd with cwd node	
-	rpwd(cwd, NULL);
-	printf("/\n");
+	rpwd(cwd, NULL); //Doesn't pass string, am not returning it
+	printf("/\n"); //newline after the string
 	return 0;
 }
 
 int rpwd(Node *dir, char *string) {
-	//if dir->parent == dir->child or dir->name == "/" (root)
-		//print dir->name
-		//return
-	//else
-		//call rpwd with parent of dir
-		//print dir->name
+	/*
+	if dir->parent == dir->child or dir->name == "/" (root)
+		dont need to print because the name is just '/'
+		return
+	else
+		call rpwd with parent of dir
+		if string exists
+			append dirname to string
+		else
+			print dir->name
+		return
+	*/
 	if(dir->parentPtr == dir->siblingPtr) { //check if root node
 		return 0;
 	} else {
@@ -134,18 +140,8 @@ int rpwd(Node *dir, char *string) {
 }
 
 int creat(char pathname[]) {
+	/*utilize generalized make function that can make files and dirs*/
 	return make(pathname, 'F');
-	//check if dirname is valid
-		//if valid
-			//check if there is another node with the same name as the basename
-			//if not
-				//create new node
-				//set type to be 'F'
-				//set name to basename
-				//parent/child/sibling = NULL
-				//last sibling of directory has sibling ptr pointed at file
-
-
 }
 
 int rm(char pathname[]) {
@@ -159,7 +155,7 @@ int rm(char pathname[]) {
 
 int save(char filename[]) {
 	//file name is what we are saving to
-
+		//if filename is not specified, go to default
 	//open file
 	//call rsave with root
 	//close file
@@ -174,12 +170,21 @@ int save(char filename[]) {
 
 	fclose(output);
 
-	printf("save coming soon\n");
 	return 0;
 }
 
 int rsave(Node *file, FILE *fp) {
-	fprintf(fp, "%c %s\n", file->type, getPWD(file));
+	//recursive portion of save
+	//output type then path to file, get path from getPWD
+	//clear up wd string because that is dynamically allocated
+	//if file->sibling != NULL
+		//call rsave on file->sibling
+	//if file->child != NULL
+		//call rsave on file->child
+	//return
+	char* wd = getPWD(file);
+	fprintf(fp, "%c %s\n", file->type, wd);
+	free(wd);
 	if(file->childPtr != NULL) {
 		rsave(file->childPtr, fp);
 	}
@@ -188,13 +193,6 @@ int rsave(Node *file, FILE *fp) {
 	}
 
 	return 0;
-	//recursive portion of save
-	//output type then path to file
-	//if file->sibling != NULL
-		//call rsave on file->sibling
-	//if file->child != NULL
-		//call rsave on file->child
-	//return
 }
 
 
@@ -221,36 +219,41 @@ int reload(char filename[]) {
 	} else {
 		parseStatus = fgets(line, 100, filesys);
 		while(parseStatus != NULL) {
-			if(strlen(line) > 1) { //the only line that matches this is root, and that is already taken care of
+			if(strlen(line) > 1) { //the only line that matches this is root, and that is already taken care of with init()
 				line[strlen(line) - 1] = '\0'; //chop off /n from the end of the line
-				type = line[0];
+				type = line[0]; //get type
 				strcpy(line, chopNChars(line, 3)); //Chop off leading type char and the space
 				printf("recreating \"%s\" \n", line);
+
 				if(type == 'D') {
 					mkdir(line);
 				} else {
 					creat(line);
 				}
+
 			}
 			parseStatus = fgets(line, 100, filesys);
-			printf("nextline = %s\n", line);
 		}
 	}
 
 	fclose(filesys);
 
 	return 0;
-	
 }
 
 int quit(char filename[]) {
-	printf("quit coming soon\n");
+	//no filename is usually passed, so it is used as placeholder so it has the same signiture
+	save(filename); //so I don't reinvent the wheel
 	return 0;
-	//no filename passed, used as placeholder so it has the same signiture
-	save(NULL);
 }
 
 int removefile(char pathname[], char filetype) {
+	//If the path is valid, check if basename exists and is a dir
+		//if so, check if there are any child points
+			//if no, we can delete
+				//go to parent, and if it is the childptr, set sibling pointer to basename's sibling
+				//delete node
+			//if yes, then print file can't be deleted
 	char* temp = "";
 	
 	char basename[64] = "",
@@ -264,6 +267,7 @@ int removefile(char pathname[], char filetype) {
 		printf("missing pathname/filename\n");
 		return 0;
 	} else {
+		//parse path
 		temp = getBaseName(pathname);
 		if(temp == NULL) {
 			strcpy(basename, pathname);
@@ -279,7 +283,6 @@ int removefile(char pathname[], char filetype) {
 		} else {
 			parentDir = cwd;
 		}
-		printf("Parent dir assigned as %s\n", parentDir->name);
 
 		doomedFile = search(parentDir, &basename, filetype);
 
@@ -290,7 +293,7 @@ int removefile(char pathname[], char filetype) {
 				if(parentDir->childPtr == doomedFile) { //is the current file the first child?
 					parentDir->childPtr = doomedFile->siblingPtr;
 				}
-				free(doomedFile);
+				free(doomedFile); //finaly delete the node
 			} else {
 				printf("Cannot delete directory that contains files\n");
 			}
@@ -316,19 +319,14 @@ int make(char pathname[], char filetype) {
 		dirname[64] = "";
 
 	Node *parentDir,
-		*newFile,
-		*oldestSibling;
+		 *newFile,
+		 *oldestSibling;
 
 
 	if(strlen(pathname) == 0) {
 		printf("missing pathname/filename\n");
-		return 0;
-	} else if (strlen(pathname) == 1 && pathname[0] == '/') { //reloading root
-		//root is already initialzed
-		return 0;
 	} else {
-		temp = getBaseName(pathname);
-		printf("basename: %s\n", temp);
+		temp = getBaseName(pathname); //parsing path
 		if(temp == NULL) {
 			strcpy(basename, pathname);
 		} else {
@@ -337,17 +335,16 @@ int make(char pathname[], char filetype) {
 
 		temp = getDirName(pathname);
 		if(temp != NULL) strcpy(dirname, temp);
-		if(strlen(dirname) > 0) {
+		if(strlen(dirname) > 0) { //if we have a path, we will follow it to the parent node
 			parentDir = followPath(dirname);
 		} else {
 			parentDir = cwd;
 		}
 		if(parentDir != NULL && search(parentDir, &basename, 'A') == NULL) { //Make sure we have a parent and filename doesn't already exist
 			newFile = (Node *)malloc(sizeof(Node));
-			printf("making %s\n", basename);
 			newFile->type = filetype;
-			strcpy(newFile->name, basename);
-			newFile->siblingPtr = newFile->childPtr = NULL;
+			strcpy(newFile->name, basename); //want to make sure Node holds the data
+			newFile->siblingPtr = newFile->childPtr = NULL; //Always null at the start
 
 			if(parentDir->childPtr == NULL) { //Only set if this is the parents first child
 				parentDir->childPtr = newFile;
@@ -355,24 +352,34 @@ int make(char pathname[], char filetype) {
 				oldestSibling = getLastChild(parentDir);
 			}
 
-			newFile->parentPtr = parentDir;
+			newFile->parentPtr = parentDir; //all sibling's parent is the parentDir
 
 			if(oldestSibling != NULL) { //If we have a sibling, set
 				oldestSibling->siblingPtr = newFile; //Sets sibling pointer so it can be accessed again
 			}
-
-			return 0;
 		} else {
 			printf("Invalid directory or filename\n");
-			return 0;
+
 		}
 	}
+	return 0;
 }
 
 Node* search(Node* parent,char *basename, char filetype) {
+	/*Searches a parent directory for a given file name of a certain file type
+		File types:
+			F - Look only for files
+			D - Look only for directories
+			A - Look for both
+
+		Goes to child (so first child)
+		While I have a valid siblingPtr, check if the name and filetype match
+			If I find a match, return it
+			If I get past all valid children, then return NULL
+
+	*/
 	Node *current = parent->childPtr; //Get to the childptr to look for those
 	if(current != NULL) {
-		printf("searching for '%s' of type '%c' from '%s'\n", basename, filetype, current->name);
 		//Go to parent, return to first child. Makes sure we have the first sibling
 		//Node* current = (startingPtr->parentPtr)->childPtr;
 		if(current == NULL) {
@@ -389,11 +396,8 @@ Node* search(Node* parent,char *basename, char filetype) {
 					}
 				}
 				current = current->siblingPtr;
-				printf("Still looking for %s, currently at %s\n", basename, current->name);
 			} while(current != NULL);
 		}
-	} else {
-		printf("parent->childPtr is null\n");
 	}
 
 	//we are out of the loop here, AKA we didn't find it
@@ -401,9 +405,12 @@ Node* search(Node* parent,char *basename, char filetype) {
 }
 
 char* getBaseName(char path[]) {
+	/*
+		Gets the last token of a path (not including the slash)
+		if there is not a '/' in the path, return null. I tried returning the path, but I had issues with that
+	*/
 	char* lastSlash = strrchr(path, '/');
 	if(lastSlash == NULL) { //there is not path besides the file name
-		printf("path didn't contain other dirs\n");
 		return NULL;
 	} else {
 		return chopNChars(lastSlash, 1);
@@ -413,6 +420,10 @@ char* getBaseName(char path[]) {
 }
 
 char* getDirName(char path[]) {
+	/*
+		gets everything before the last '/'
+		if there is no slash, this returns null
+	*/
 	int path_length = strlen(path),
 		basename_length = 0;
 	char* end = strrchr(path, '/');
@@ -422,19 +433,8 @@ char* getDirName(char path[]) {
 		return NULL;
 	}
 	basename_length = strlen(end);
-	printf("path length: %d\n", (path_length - basename_length));
 	strncpy(_dirname, path, (path_length - basename_length));  //the minus one is to knock off the additional slash
-	printf("_dirname: %s\n", _dirname);
 	return  _dirname;
-}
-
-//If passed a/b/c/d, this will return a
-char* getNextDir(char path[]) {
-	char* _dir = strtok(path, '/');
-	if(strlen(_dir) == 0) { //first character was a '/'
-		_dir = strtok(NULL, '/'); //skip the the first actual dir name
-	}
-	return _dir;
 }
 
 //Scans until the last dir and returns that so we can easily add dirs to the end
@@ -448,13 +448,13 @@ Node* getLastChild(Node* dir) {
 			current = current->siblingPtr;
 		}	
 	}
-	
 	return current;
 }
 
 Node* followPath(char path[]) {
-	char *dirs[64]; //Techincal limit of 32 for either, round up to be safe
-	char backup[64];
+	//Dirs holds each dir in the path
+	char *dirs[64]; //Techincal limit of 32 for dirname and basename, round up to be safe. 
+	char backup[64]; //So I don't destroy the path by accident
 	char *temp;
 	int i = 1,
 		numDirs = 0,
@@ -485,41 +485,29 @@ Node* followPath(char path[]) {
 			strcpy(dirs[0], backup);
 			numDirs = 1;
 		} else {
-			//printf("backup: %s\n", backup);
-
-			//strcpy(dirs[0], strtok(backup, "/"));
-
-			/*for (temp = strtok(backup," "); temp != NULL; temp = strtok(NULL, " "))
-			{
-				puts(temp);
-			}*/
-
 			temp = strtok(backup, " /");
-
-			//printf("first tok: %s\n", dirs[0]);
-			//numDirs++;
 			i = 0;
 
-			while(temp != NULL) {
+			while(temp != NULL) { //adds each dir to the array
 				dirs[i] = temp;
 				i++;
 				numDirs++;
 				temp = strtok(NULL, " /");
 			}
-			for (i = 0; i < numDirs; i++)
+			/*for (i = 0; i < numDirs; i++)
 			{
 				printf("%s, ", dirs[i]);
 			}
-			printf("\n");
+			printf("\n");*/
 		}
 
 		//scans while we have not found it, and while the path exists
 		i = 0;
-		while(valid && i < numDirs) {
-			if(strcmp(dirs[i], "..") == 0) {
+		while(valid && i < numDirs) { //While we haven't run into a non-existant file, and we aren't at the end of the path
+			if(strcmp(dirs[i], "..") == 0) { //Hard coded move to parent
 				current = current->parentPtr;
 			} else {
-				current = search(current, dirs[i], 'D'); //Look for dir
+				current = search(current, dirs[i], 'D'); //Look for specified directoy
 			}
 			if(current == NULL) {
 				valid = 0;
@@ -536,7 +524,6 @@ Node* followPath(char path[]) {
 //Function to chop off characters from the front of a string. Mostly used to remove the leading slash
 char* chopNChars(char str[], int chars) {
 	int str_len = strlen(str);
-	printf("chopping %d off \"%s\" which is %d chars long\n", chars, str, str_len);
 	char* temp = malloc(sizeof(char) * 64);
 	char newStr[64];
 
@@ -552,10 +539,10 @@ char* chopNChars(char str[], int chars) {
 
 void initialize() {
 	root = (Node*)malloc(sizeof(Node));
-	strcpy(root->name, "/");
+	strcpy(root->name, "/"); //Hard coded '/' name
 	root->type = 'D';
 	root->childPtr = NULL;
-	root->siblingPtr = root;
+	root->siblingPtr = root; //As specified by lab1 doc
 	root->parentPtr = root;
 	cwd = root;
 }

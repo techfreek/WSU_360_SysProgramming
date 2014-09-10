@@ -17,20 +17,21 @@ char basename[64] = "";
 main() {
 	initialize();      /* initialize the / DIR of the tree */
 	while(1){
-		printf("User:%s$ ", getPWD(NULL));
+		char* wd = getPWD(NULL);
+		printf("User:%s$ ", wd);
+		free(wd);
 		gets(line);
 		parseLine(line);
 		//read a line containting  command [pathname]; // [ ] means optional
 		int ID = findCommand(command);
 		if(ID >= 0) {
-			int (*fptr[ ])(char *) = {(int (*)())mkdir,rmdir,ls, cd, pwd,creat,rm,save,reload};	
+			int (*fptr[ ])(char *) = {(int (*)())mkdir,rmdir,ls,cd,pwd,creat,rm,save,reload,quit};	
 			int r = fptr[ID](pathname);
+			if(ID == 9) { //command = quit
+				break;
+			}
 		} else {
 			printf("\"%s\" is not a valid command\n", command);
-		}
-
-		if(ID == 9) { //command = quit
-			break;
 		}
 	}
 }
@@ -49,6 +50,7 @@ void parseLine(char line[]) {
 }
 
 int findCommand(char command[]) {
+	//couldn't think of a better way to look up the files
 	if(strcmp(command, "mkdir") == 0) {
 		return 0;
 	} else if(strcmp(command, "rmdir") == 0) {
