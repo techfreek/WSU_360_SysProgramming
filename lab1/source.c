@@ -11,6 +11,7 @@ extern char basename[64];
 
 int make(char[], char);
 int removefile(char[], char);
+Node* findPrevSibling(Node*);
 Node* followPath(char[]);
 Node* getLastChild(Node*);
 int rpwd(Node *, char *);
@@ -107,7 +108,7 @@ int pwd(char pathname[]) {
 	//ignore pathname[]
 	//call rpwd with cwd node	
 	rpwd(cwd, NULL); //Doesn't pass string, am not returning it
-	printf("/\n"); //newline after the string
+	printf("\n"); //newline after the string
 	return 0;
 }
 
@@ -261,7 +262,8 @@ int removefile(char pathname[], char filetype) {
 
 	Node *parentDir,
 			*doomedFile,
-			*sibling;
+			*sibling,
+			*prevSibling;
 
 	if(strlen(pathname) == 0) {
 		printf("missing pathname/filename\n");
@@ -276,7 +278,6 @@ int removefile(char pathname[], char filetype) {
 		}
 
 		temp = getDirName(pathname);
-		printf("temp: %s\n", temp);
 		if(temp != NULL) strcpy(dirname, temp);
 		if(strlen(dirname) > 0) {
 			parentDir = followPath(dirname);
@@ -292,6 +293,9 @@ int removefile(char pathname[], char filetype) {
 			if(doomedFile->childPtr == NULL) {
 				if(parentDir->childPtr == doomedFile) { //is the current file the first child?
 					parentDir->childPtr = doomedFile->siblingPtr;
+				} else {
+					prevSibling = findPrevSibling(doomedFile);
+					prevSibling->siblingPtr = doomedFile->siblingPtr;
 				}
 				free(doomedFile); //finaly delete the node
 			} else {
@@ -301,6 +305,19 @@ int removefile(char pathname[], char filetype) {
 	}
 	return 0;
 }
+
+Node* findPrevSibling(Node* dir) {
+	Node *current = dir->parentPtr->childPtr;
+	if(dir != NULL) {
+		while(current->siblingPtr != dir) {
+			current = current->siblingPtr;
+		}
+		return current;
+	} else {
+		return NULL;
+	}
+}
+
 
 int make(char pathname[], char filetype) {
 	//parse path
