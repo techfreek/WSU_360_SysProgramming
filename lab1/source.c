@@ -78,6 +78,9 @@ int ls(char pathname[]) {
 		}
 	} else {
 		current = followPath(pathname);
+		if(current->childPtr != NULL) {
+			current = current->childPtr;
+		}
 	}
 	if(current != NULL) {
 		do {
@@ -258,7 +261,10 @@ int removefile(char pathname[], char filetype) {
 	char* temp = "";
 	
 	char basename[64] = "",
-		dirname[64] = "";
+		dirname[64] = "",
+		path_backup[64] = "";
+
+	strcpy(path_backup, pathname);
 
 	Node *parentDir,
 			*doomedFile,
@@ -277,9 +283,12 @@ int removefile(char pathname[], char filetype) {
 			strcpy(basename, temp);
 		}
 
-		temp = getDirName(pathname);
+		temp = getDirName(path_backup);
+		printf("dirname: %s\n", temp);
 		if(temp != NULL) strcpy(dirname, temp);
-		if(strlen(dirname) > 0) {
+		if(strlen(dirname) == 1 && dirname[0] == '/') {
+			parentDir = root;
+		} else if(strlen(dirname) > 0) {
 			parentDir = followPath(dirname);
 		} else {
 			parentDir = cwd;
@@ -441,12 +450,20 @@ char* getDirName(char path[]) {
 		gets everything before the last '/'
 		if there is no slash, this returns null
 	*/
+	char* _dirname = malloc(sizeof(char) * 64);
+	printf("getDirName: %s\n", path);
+	if(strlen(path) <= 2 && path[0] == '/') {
+		strcpy(_dirname, "/\0");
+		return _dirname;
+	}
 	int path_length = strlen(path),
 		basename_length = 0;
 	char* end = strrchr(path, '/');
-	char* _dirname = malloc(sizeof(char) * 64);
-	if(end == NULL) {
-		//if there is the dirname
+	if(end == path) {
+		strcpy(_dirname, "/\0");
+		return _dirname;
+	} else if(end == NULL) {
+		//if there is no dirname
 		return NULL;
 	}
 	basename_length = strlen(end);
@@ -487,7 +504,9 @@ Node* followPath(char path[]) {
 	if(strlen(path) == 1 && path[0] == '/') { //if only a single slash is passed it, we go to the root directory
 		return root; 
 	} else if(path[0] == '/') { //absolute path
-		current = root->childPtr;
+		current = root;
+		strcpy(path, chopNChars(path, 1)); //Chop off slash
+		printf("fixed path: %s\n", path);
 	} else {
 		current = cwd;
 	}
@@ -549,6 +568,7 @@ char* chopNChars(char str[], int chars) {
 		return str;
 	} else {
 		strncpy(temp, str + chars, str_len - chars);
+		temp[(str_len - chars)] = '\0';
 		printf("newStr = \"%s\"\n", temp);
 		return temp;
 	}
