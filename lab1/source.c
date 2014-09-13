@@ -48,7 +48,8 @@ int cd(char pathname[]) {
 			printf("%s is not a directory\n", temp->name);
 		}
 	} else {
-		printf("No such file or directory\n");
+		//printf("No such file or directory\n");
+		cwd = root;
 	}
 	return 0;
 }
