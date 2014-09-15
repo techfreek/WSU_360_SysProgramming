@@ -1,0 +1,60 @@
+ Case   | a.out |  TEXT  |  DATA  |  BSS   |
+--------------------------------------------
+  (1)   |  7309 |  1136  |   280  |    8   |
+--------------------------------------------  
+  (2)   |  7313 |  1136  |   284  |    4   |
+--------------------------------------------
+  (3)   |  7309 |  1136  |   280  | 40032  |
+--------------------------------------------
+  (4)   | 47341 |  1136  | 40304  |     4  |
+--------------------------------------------
+  (5)   |  7309 |  1136  |   280  |     8  |
+--------------------------------------------
+  (6)   |  7401 |  1152  |   280  | 40068  |
+--------------------------------------------
+
+
+1. Variables in C may be classified as
+
+          globals ---|--- UNINITIALIZED  globals;
+                     |---   INITIALIZED  globals;
+
+          locals  ---|--- AUTOMATIC locals;
+                     |--- STATIC    locals;
+
+   In terms of the above classification and the variables g, a, b, c, d,
+
+    Which variables are in DATA? 
+        In t2.c and t4.c, g is in data
+
+    Which variables are in BSS ? 
+        In t1.c, t3.c, t5.c, and t6.c g is in bss. 
+        In t6.c, variables a,b,c, and d are in bss.
+
+
+   2. In terms of the TEXT, DATA and BSS sections,
+      Which sections are in a.out, which section is NOT in a.out?
+        Text and data are in a.out. BSS is not in a.out
+      WHY?
+        BSS are un-initalized variables and thus have no current value. They will be initialized during run-time. There is no need to increase the size of the file if there is no need
+
+  (B). For each case, use   cc -m32 -static t.c   to generate a.out.
+       Record the sizes again and compare them with the sizes in (A).
+Case   | a.out |  TEXT  |  DATA  |  BSS   |
+--------------------------------------------
+  (1)   |733308| 657750 |  4096  |  5052  |
+--------------------------------------------  
+  (2)   |733308| 657750 |  4096  |  5020  |
+--------------------------------------------
+  (3)   |733308| 657750 |  4096  | 45020  |
+--------------------------------------------
+  (4)   |733340| 657750 | 44128  |  5020  |
+--------------------------------------------
+  (5)   |733308| 657750 |  4096  |  5052  |
+--------------------------------------------
+  (6)   |733340| 657750 |  4096  | 45084  |
+--------------------------------------------
+       WHAT DO YOU SEE? 
+            The file sizes increase drastically.
+       WHY?
+            This is because the stdlib files (in this case stdio.h) are statically linked, meaning that they are included in the executable.
