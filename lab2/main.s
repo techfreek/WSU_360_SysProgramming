@@ -1,3 +1,8 @@
+/*
+ * Name: Alex Bahm
+ * File: main.s
+ */
+
 .global main, mymain, myprintf, printf
 
 main:

@@ -1,3 +1,8 @@
+/*
+ * Name: Alex Bahm
+ * File: myprintf.h
+ */
+
 #define BASE 10
 typedef unsigned int u32;
 

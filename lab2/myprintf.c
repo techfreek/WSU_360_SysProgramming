@@ -1,16 +1,14 @@
+/*
+ * Name: Alex Bahm
+ * File: myprintf.c
+ */
+
 #include "myprintf.h"
-//int printd(int x): print an integer (which may be negative!!)
-//int printo(u32 x): print x in OCTal as 0.....
-//int printx(u32 x): print x in HEX.  as 0x....	
+
 char *table = "0123456789ABCDEF";
 
 int myprintf(char* fmtStr, ...) {
 	/*
-		int myprintf(char *fmt, ...) // SOME C compiler requires the 3 DOTs
-		{
-		   Assume the call is myprintf(fmt, a,b,c,d);
-		   Upon entry, the stack contains:
-
 		                            |-> "....%c ..%s ..%d .. %x ....\n"       
 		                            |
 		   HIGH                     |                                     LOW 
@@ -19,26 +17,15 @@ int myprintf(char* fmtStr, ...) {
 		   -------------------------------------|------------------------------
 		                                        | 
 		                                     CPU.ebp
-		  
-		  
-		     1. Let char *cp point at the format string
-
-		     2. Let int *ip  point at the first item to be printed on stack, e.g. a
-
-
 		  *************** ALGORITHM ****************
 		   Use cp to scan the format string:
 		       spit out any char that's NOT %
 		       for each \n, spit out an extra \r
-
 		   Upon seeing a %: get next char, which must be one of 'c','s','u','d', 'o','x'
-
 		   Advance ip to point to the next item on stack.
 	*/
 
-
-
-	char *cp = fmtStr;
+	char *cp = fmtStr; //cp now points at fmtStr
 	int *ip = get_ebp();
 	ip += 3; //now points at first argument
 
@@ -63,11 +50,15 @@ int myprintf(char* fmtStr, ...) {
 			} else if(*cp == 'x') {
 				printx(*ip);
 				ip += 1;
-			}
+			} //If it's none of the above, we will ignore it
 		} else if(*cp == '/') { //could be a /n
 			if(*(cp + 1) == 'n') {
 				putchar('\n'); //newline
 				putchar('\r'); //return
+			} else if(*(cp + 1) == '\\') { //users wants a \
+				putchar('\\');
+			} else if(*(cp + 1) == 't') { //tab cahracter
+				putchar('\t');
 			}
 		} else {
 			putchar(*cp);
@@ -80,7 +71,8 @@ int myprintf(char* fmtStr, ...) {
 int prints(char* s) {
 	char* sptr = s;
 	
-	while(*sptr != 0) { //this might be backwards. If so, write a recursive function
+	//while we have not reached the end of the string, keep putting the current char
+	while(*sptr != 0) { 
 		putchar(*sptr);
 		sptr++;
 	}
@@ -99,11 +91,10 @@ int printd(int x) {
 	} else {
 		int msb = x;
 		msb = msb >> 31; //shifts bits over so only the sign bit is still there
-		if(msb) { //negative
+		if(msb) { //x is negative
 			putchar('-');
 			x *= -1; //make x positive
 		}
-		//x = (x << 1) >> 1; //clears the sign bit
 		rpd(x);
 
 	}
@@ -118,13 +109,8 @@ int rpd(int x) {
 	}
 }
 
-/*
- *
- * Broken. Prints hex incorrectly
- *
- */
 int printx(int x) {
-	putchar('0');
+	putchar('0'); //needed for formating of hex
 	putchar('x');
 	if(x == 0) {
 		putchar('0');
@@ -143,14 +129,9 @@ int rpx(int x) {
 	}
 }
 
-
-/*
- *
- * Broken. Prints octcal incorrectly
- *
- */
 int printo(int x) { //Octal 
-	putchar('0');
+	putchar('0'); //needed for how octal is displayed
+	if(x < 0) x *= -1; //print OCT doesn't seem to work when the value is negative
 	if(x == 0) {
 		putchar('0');
 		return; //We are done here
@@ -176,7 +157,6 @@ int printu(u32 x)
 	} else {
 		rpu(x);
 	}
-
 	putchar(' ');
 }
 
