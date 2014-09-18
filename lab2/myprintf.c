@@ -35,14 +35,53 @@ int myprintf(char* fmtStr, ...) {
 
 		   Advance ip to point to the next item on stack.
 	*/
+
+
+
+	char *cp = fmtStr;
+	int *ip = get_ebp();
+	ip += 3; //now points at first argument
+
+	while(*cp != 0) {
+		if(*cp == '%') { //logic for calling printf options
+			cp++; //We won't bother to output the %
+			if(*cp == 'c') {
+				putchar(*ip);
+				ip += 1; //advance to next parameter
+			} else if(*cp == 's') {
+				prints(*ip);
+				ip += 1;
+			} else if(*cp == 'u') {
+				printu(*ip);
+				ip += 1;
+			} else if(*cp == 'd') {
+				printd(*ip);
+				ip += 1;
+			} else if(*cp == 'o') {
+				printo(*ip);
+				ip += 1;
+			} else if(*cp == 'x') {
+				printx(*ip);
+				ip += 1;
+			}
+		} else if(*cp == '/') { //could be a /n
+			if(*(cp + 1) == 'n') {
+				putchar('\n'); //newline
+				putchar('\r'); //return
+			}
+		} else {
+			putchar(*cp);
+		}
+		cp++;
+	}
 }
 
 
 int prints(char* s) {
 	char* sptr = s;
 	
-	while(s != 0) { //this might be backwards. If so, write a recursive function
-		putchar(sptr);
+	while(*sptr != 0) { //this might be backwards. If so, write a recursive function
+		putchar(*sptr);
 		sptr++;
 	}
 
@@ -59,11 +98,12 @@ int printd(int x) {
 		putchar('0');
 	} else {
 		int msb = x;
-		msb = msb >>> 31; //shifts bits over so only the sign bit is still there
+		msb = msb >> 31; //shifts bits over so only the sign bit is still there
 		if(msb) { //negative
 			putchar('-');
+			x *= -1; //make x positive
 		}
-		x = (x <<< 1) >>> 1; //clears the sign bit
+		//x = (x << 1) >> 1; //clears the sign bit
 		rpd(x);
 
 	}
@@ -78,6 +118,11 @@ int rpd(int x) {
 	}
 }
 
+/*
+ *
+ * Broken. Prints hex incorrectly
+ *
+ */
 int printx(int x) {
 	putchar('0');
 	putchar('x');
@@ -93,12 +138,18 @@ int rpx(int x) {
 	char c;
 	if(x) {
 		c = table[x % 16];
-		rpu(x / 16);
+		rpx(x / 16);
 		putchar(c);
 	}
 }
 
-int printo(int x) { //Octal
+
+/*
+ *
+ * Broken. Prints octcal incorrectly
+ *
+ */
+int printo(int x) { //Octal 
 	putchar('0');
 	if(x == 0) {
 		putchar('0');
@@ -113,7 +164,7 @@ int rpo(int x) {
 	char c;
 	if(x) {
 		c = table[x % 8];
-		rpu(x / 8);
+		rpo(x / 8);
 		putchar(c);
 	}
 }
