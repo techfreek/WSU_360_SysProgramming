@@ -1,4 +1,5 @@
-
+#define BASE 10
+typedef unsigned int u32;
 
 
 int myprintf(char* fmtStr, ...);

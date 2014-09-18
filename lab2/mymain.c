@@ -1,3 +1,5 @@
+#include "myprintf.h"
+
 mymain(int argc, char *argv[], char *env[]) {
 	int i;
 	/*my*/printf("in mymain(): argc=%d\n", argc);
@@ -7,7 +9,7 @@ mymain(int argc, char *argv[], char *env[]) {
 	}
 
 	i = 0;
-	while(env[i] != NULL) {
+	while(env[i] != 0) {
 		/*my*/printf("env[%d] = %s\n", i, env[i]);
 		i++;
 	}

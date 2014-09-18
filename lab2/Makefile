@@ -1,1 +1,2 @@
-gcc -m32 -o lab1 mymain.c myprintf.c main.s -I. -g -w
+a.out: mymain.c myprintf.c main.s
+	gcc -m32 -o lab1 mymain.c myprintf.c main.s -I. -g -w
