@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int pid;
 
@@ -40,17 +41,18 @@ main(int argc, char *argv[ ], char* env[])
 	//myargv[n] = 0;
 	pid = getpid();
 	printf("proc %d in a.out exec to b.out\n", pid);
+	printf("a.out parent=%d", getppid());
 
 	getcwd(cwd,128);     // cwd contains the pathname of CWD  
 	printf("cwd = %s\n", cwd);
 
 	strcpy(command, cwd);
-	strcat(command, "/bout");
+	strcat(command, "/b.out");
 	printf("command: %s\n", command);
 
 	// WRITE CODE to let command = CWD/b.out
 
-	execve(command, &myargv, &env);
+	execve(command, myargv, env);
 
-	printf("execve failed\n");
+	printf("execve failed:%d = %s\n", errno, strerror(errno));
 }

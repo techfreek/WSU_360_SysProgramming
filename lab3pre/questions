@@ -1,3 +1,9 @@
+/*
+ * Alex Bahm
+ * Lab 3 Pre
+ */
+
+
 t1.c
 
 What are the pid and ppid of the process that executes a.out? 5041, 4336
@@ -26,21 +32,29 @@ a.out
  	| /* filename/function */ | arg1 | arg2| ... | argN |
  	-----------------------------------------------------
 
-     // DEFINE myargv as AN ARRAY OF 32 char pointers:
-      _____????_____ myargv___???____;
-
 (3). Run a.out. 
                    QUESTIONS:
-     Which process executes a.out?_________________________________________
-     which process executes b.out?_________________________________________
+     Which process executes a.out? shell
+     which process executes b.out? shell //Both ppid's are that of the shell
  
-     what are the argv[] strings in b.out? ______________________________
+     what are the argv[] strings in b.out? 
+		argv[0] = b.out
+		argv[1] = this
+		argv[2] = is
+		argv[3] = a
+		argv[4] = test
+
+		argv[5] = ��R��aU�
+		argv[6] = ����n�ݿ��R��aU�
+		argv[7] = __libc_start_main
+		argv[8] = 
 
      HOW TO PASS env[ ] strings 
                  PATH=/a/b/c
                  HOEM=/root
                  TERM=console
      to main(int argc, char *argv[ ], char *env[ ]);
+     	I can pass the env as its self. since execve takes an array of char*s, I can just pass in env in a.c and it will get passed to b.c
 
 io.c
  At L1:     the printed line will show up on the screen.
