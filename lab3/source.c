@@ -1,5 +1,8 @@
 #include "source.h"
 
+extern char* enviro[];
+extern char* home;
+
 int executeCMD(char* args[], int numArgs) {
 	//Look for I/O redirection calls
 		//If < then takes inputs from an infile

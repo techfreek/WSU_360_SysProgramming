@@ -1,30 +1,28 @@
 #include "source.h"
 
-extern char* enviro[];
-extern char* home;
+char* enviro[];
+char* home;
 
 int changeDir(char* path);
-int handlePipes(char* line, char*[] commands);
+int handlePipes(char* line, char* commands[]);
 int countPipes(char* line);
 
-int main(int argc, char *argv[ ], char* env[]) {
+int main(int argc, char *argv[], char* env[]) {
 	enviro = env;
 	int exitStatus = 0;
 	char* line = (char*)malloc(sizeof(char) * 512);
 	char* cmd = (char*)malloc(sizeof(char) * 256);
 	char* path = (char*)malloc(sizeof(char) * 256);
-	char* commands[];
+	char* commands[0];
 
 	do {
 		printf("> ");
 		scanf("%s", line);
-		
-
-		if(strncmp("cd", line, 2) == 0) {
+				if(strncmp("cd", line, 2) == 0) {
 			cmd = strtok(line, " "); //strtok occasionally destroys the string, so this is a failsafe
 			path = strtok(NULL, " ");
 			changeDir(path);
-		} else if(strcmp("exit", line, 4) == 0) {
+		} else if(strncmp("exit", line, 4) == 0) {
 			exit(1);
 		} else {
 			int numCommands = handlePipes(line, commands);
@@ -51,12 +49,12 @@ int changeDir(char* path) {
 	}
 }
 
-int handlePipes(char* line, char*[] commands) {
+int handlePipes(char* line, char* commands[]) {
 	int numPipes = countPipes(line),
 		i = 0;
 
 	char* temp = (char*)malloc(sizeof(char) * 128);
-	commands = (char*[])malloc((sizeof(char) * 128) * numPipes + 1); //each pipe (max of numPipes + 1) 128 chars
+	commands = malloc((sizeof(char) * 128) * numPipes + 1); //each pipe (max of numPipes + 1) 128 chars
 	
 	strtok(line, temp);
 	if(numPipes > 0) {
