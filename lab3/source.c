@@ -61,19 +61,22 @@ int executeCMD(char* args[], int numArgs) {
 
 	//Fork process
 	pid = fork();
-	if(!pid) { //Parent
+	if(pid) { //Parent
 		//Wait for child to terminate
 		pid = wait(&r);
 
 		//print exit status code
-		printf("Child died with status: %d", r);
-
+		printf("Child died with status: %d\n", r);
+		printf("Error: %s\n", strerror(errno));
 		//return to main loop
 	} else { //child
 		//execute command (will be in '/bin/')
+		printf("This is child\n");
 		strcpy(command, "/bin/");
 		strcat(command, args[0]);
-		execve(command, args, enviro);
+		printf("command: %s\n", command);
+		execv(command, args, enviro);
+		printf("Error: %s\n", strerror(errno));
 	}
 }
 
@@ -81,16 +84,22 @@ int executeCMDs(char* cmds[], int numCommands) {
 	//For each command
 		//create array of char pointers to the arguments, pass to 
 		//call execute CMD
-	char* args[64];
+	
 	char* token = (char*)malloc(sizeof(char) * 128);
+	char* args[64]; /* THIS IS NOT RUN, NO CLUE WHY */
 
 	int i = 0,
 		j = 0;
 	for(; i < numCommands; i++) {
 		token = strtok(cmds[i], " ");
-		j = 0;
+		//args[0] = (char*)malloc(sizeof(char) * 128);
+		//strcpy(args[0], token);
+		args[0] = token;
+		j = 1; //the first command is the filename
 		while(token != NULL) {
-			args[j] = token;
+			args[j] = (char*)malloc(sizeof(char) * 128);
+			strcpy(args[j], token);
+			//args[j] = token;
 			j++;
 			token = (char*)malloc(sizeof(char) * 128);
 			token = strtok(NULL, " ");

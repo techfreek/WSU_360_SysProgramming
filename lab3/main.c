@@ -28,7 +28,7 @@ int main(int argc, char *argv[], char* env[]) {
 			int numPipes = countPipes(line);
 			char* commands[numPipes + 1];
 			handlePipes(line, commands, numPipes);
-			executeCMDs(commands, numPipes);
+			executeCMDs(commands, numPipes + 1);
 		}
 
 	} while(exitStatus == 0);
