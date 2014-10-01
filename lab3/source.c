@@ -53,7 +53,11 @@ int executeCMD(char* args[], int numArgs) {
 			outfile = fopen(args[i + 1], "a");
 		}
 	}
-
+	if(firstIO) {
+		//If there is any I/O redirection, adjust the array so the program doesn't get confused by those inputs
+		args[firstIO] = NULL;
+		numArgs = firstIO;
+	}
 
 	//Fork process
 	pid = fork();

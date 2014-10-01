@@ -1,10 +1,10 @@
 #include "source.h"
 
-char* enviro[];
+char** enviro;
 char* home;
 
 int changeDir(char* path);
-int handlePipes(char* line, char* commands[]);
+int handlePipes(char* line, char* commands[], int numPipes);
 int countPipes(char* line);
 
 int main(int argc, char *argv[], char* env[]) {
@@ -13,20 +13,22 @@ int main(int argc, char *argv[], char* env[]) {
 	char* line = (char*)malloc(sizeof(char) * 512);
 	char* cmd = (char*)malloc(sizeof(char) * 256);
 	char* path = (char*)malloc(sizeof(char) * 256);
-	char* commands[0];
+	char* buf = (char*)malloc(sizeof(char) * 128);
 
 	do {
-		printf("> ");
-		scanf("%s", line);
-				if(strncmp("cd", line, 2) == 0) {
+		printf("%s$ ", getcwd(buf, 128));
+		gets(line);
+		if(strncmp("cd", line, 2) == 0) {
 			cmd = strtok(line, " "); //strtok occasionally destroys the string, so this is a failsafe
 			path = strtok(NULL, " ");
 			changeDir(path);
 		} else if(strncmp("exit", line, 4) == 0) {
 			exit(1);
 		} else {
-			int numCommands = handlePipes(line, commands);
-			executeCMDs(commands, numCommands);
+			int numPipes = countPipes(line);
+			char* commands[numPipes + 1];
+			handlePipes(line, commands, numPipes);
+			executeCMDs(commands, numPipes);
 		}
 
 	} while(exitStatus == 0);
@@ -34,7 +36,7 @@ int main(int argc, char *argv[], char* env[]) {
 }
 
 int changeDir(char* path) {
-	if(path != NULL && strlen(path) < 0) {
+	if(path != NULL && strlen(path) > 0) {
 		chdir(path);
 	} else {
 		if(home == NULL) {
@@ -43,20 +45,21 @@ int changeDir(char* path) {
 			printf("Found home: %s\n", enviro[i]);
 			home = (enviro[i] + 5); //Should ignore the 'HOME=' part
 			printf("Home: %s\n", home);
-			
 		}
 		chdir(home);
 	}
 }
 
-int handlePipes(char* line, char* commands[]) {
-	int numPipes = countPipes(line),
-		i = 0;
+int handlePipes(char* line, char* commands[], int numPipes) {
+	int i = 0;
 
 	char* temp = (char*)malloc(sizeof(char) * 128);
-	commands = malloc((sizeof(char) * 128) * numPipes + 1); //each pipe (max of numPipes + 1) 128 chars
+	for(i = 0; i <= numPipes; i++) {
+		commands[i] = malloc(sizeof(char) * 128); //each pipe (max of numPipes + 1) 128 chars
+	}
 	
 	strtok(line, temp);
+
 	if(numPipes > 0) {
 		//cmd1 < infile //do this
 		strcat(temp, "< infile");
