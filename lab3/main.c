@@ -22,13 +22,13 @@ int main(int argc, char *argv[], char* env[]) {
 			cmd = strtok(line, " "); //strtok occasionally destroys the string, so this is a failsafe
 			path = strtok(NULL, " ");
 			changeDir(path);
-		} else if(strncmp("exit", line, 4) == 0) {
+		} else if(strcmp("exit", line) == 0) {
 			exit(1);
-		} else {
+		} else if(strlen(line) > 0) {
 			int numPipes = countPipes(line);
-			char* commands[numPipes + 1];
+			char* commands[numPipes];
 			handlePipes(line, commands, numPipes);
-			executeCMDs(commands, numPipes + 1);
+			executeCMDs(commands, numPipes);
 		}
 
 	} while(exitStatus == 0);
@@ -53,14 +53,14 @@ int changeDir(char* path) {
 int handlePipes(char* line, char* commands[], int numPipes) {
 	int i = 0;
 
-	char* temp = (char*)malloc(sizeof(char) * 128);
-	for(i = 0; i <= numPipes; i++) {
+	char* temp;
+	for(i = 0; i < numPipes; i++) {
 		commands[i] = malloc(sizeof(char) * 128); //each pipe (max of numPipes + 1) 128 chars
 	}
 	
-	strtok(line, temp);
+	temp = strtok(line, "|");
 
-	if(numPipes > 0) {
+	if(numPipes > 1) { //I should rename this, numPipes refers to how many seperate commands there are. AKA always 1+
 		//cmd1 < infile //do this
 		strcat(temp, "< infile");
 		strcpy(commands[0], temp);
@@ -84,11 +84,18 @@ int handlePipes(char* line, char* commands[], int numPipes) {
 
 int countPipes(char* line) {
 	int i = 0,
-		count = 0;
+		count = 1; //Starts from 1 because if the line is not empty, we will have at least 1 command
 	for(i = 0; i < strlen(line); i++) {
 		if(line[i] == '|') {
 			count++;
 		}
 	}
 	return count;
+}
+
+//Custom strtok function, use tok to indicate which token
+char* stringtok(char* string, char tokens[], int tok) {
+	int i = 0, j = 0, len = strlen(string);
+	for(; i < len; i++) {
+	}
 }

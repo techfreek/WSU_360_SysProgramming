@@ -25,8 +25,10 @@ int executeCMD(char* args[], int numArgs) {
 		 *outfile;
 
 	char* command = (char*)malloc(sizeof(char) * 128);
+	printf("Args: [");
 
 	for(; i < numArgs; i++) {
+		printf("%s, ", args[i]);
 		if(args[i] == "<") {
 			if(firstIO < 0) {
 				firstIO = i;
@@ -53,7 +55,9 @@ int executeCMD(char* args[], int numArgs) {
 			outfile = fopen(args[i + 1], "a");
 		}
 	}
-	if(firstIO) {
+	printf("]\n");
+
+	if(firstIO > 0) {
 		//If there is any I/O redirection, adjust the array so the program doesn't get confused by those inputs
 		args[firstIO] = NULL;
 		numArgs = firstIO;
@@ -84,9 +88,9 @@ int executeCMDs(char* cmds[], int numCommands) {
 	//For each command
 		//create array of char pointers to the arguments, pass to 
 		//call execute CMD
-	
+
+	char* args[64] = {0}; /* THIS IS NOT RUN, NO CLUE WHY */
 	char* token = (char*)malloc(sizeof(char) * 128);
-	char* args[64]; /* THIS IS NOT RUN, NO CLUE WHY */
 
 	int i = 0,
 		j = 0;
@@ -94,14 +98,13 @@ int executeCMDs(char* cmds[], int numCommands) {
 		token = strtok(cmds[i], " ");
 		//args[0] = (char*)malloc(sizeof(char) * 128);
 		//strcpy(args[0], token);
-		args[0] = token;
-		j = 1; //the first command is the filename
+		//args[0] = token;
+		//j = 1; //the first command is the filename
 		while(token != NULL) {
-			args[j] = (char*)malloc(sizeof(char) * 128);
-			strcpy(args[j], token);
+			args[j] = strdup(token);
 			//args[j] = token;
 			j++;
-			token = (char*)malloc(sizeof(char) * 128);
+			
 			token = strtok(NULL, " ");
 		}
 		args[j] = NULL;
