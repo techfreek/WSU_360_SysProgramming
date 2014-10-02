@@ -58,26 +58,33 @@ int handlePipes(char* line, char* commands[], int numPipes) {
 		commands[i] = malloc(sizeof(char) * 128); //each pipe (max of numPipes + 1) 128 chars
 	}
 	
-	temp = strtok(line, "|");
+	temp = strdup(strtok(line, "|"));
 
-	if(numPipes > 1) { //I should rename this, numPipes refers to how many seperate commands there are. AKA always 1+
-		//cmd1 < infile //do this
-		strcat(temp, "< infile");
-		strcpy(commands[0], temp);
-	} else {
-		strcpy(commands[0], temp);
-	}
-
-	for(i = 1; i < numPipes; i++) {
-		strtok(NULL, temp);
-		if(numPipes > 1 && i != (numPipes - 1)) { //middleman pipes
-			//do this:  cmd1 << infile > outfile	
-			//strcat the < infile and > outfile onto temp
-		} else if(i == (numPipes - 1)) { //last pipe
-			//do this: cmdN < outfile
-			//Cats the '< outfile' onto temp
+	for(i = 0; i < numPipes; i++) {
+		char string[32];
+		
+		if(i == 0 && numPipes > 1) { //Don't bother if we have only 1 command
+			strcat(temp, " < .io");
+			sprintf(string, "%d", i);
+			strcat(temp, string);
+		} else if(i == (numPipes - 1) && numPipes > 1) { //last pipe
+			strcat(temp, " > .io");
+			sprintf(string, "%d", i - 1);
+			strcat(temp, string);
+		} else if(numPipes > 2) { //middle man pipes
+			strcat(temp, " > .io");
+			sprintf(string, "%d", i - 1);
+			strcat(temp, string);
+			strcat(temp, " < .io");
+			sprintf(string, "%d", i);
+			strcat(temp, string);
 		}
 		strcat(commands[i], temp);
+
+		
+		if((i + 1) != numPipes) { //If we do at this point, it will crash
+			temp = strdup(strtok(NULL, "|")); 	
+		}
 	}
 
 }

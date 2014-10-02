@@ -19,50 +19,6 @@ int executeCMD(char* args[], int numArgs) {
 		r,
 		pid;
 
-	int pd[2];
-	r = pipe(pd);
-	FILE *infile, //verify that these do infact go into the right file descriptors
-		 *outfile;
-
-	char* command = (char*)malloc(sizeof(char) * 128);
-	printf("Args: [");
-
-	for(; i < numArgs; i++) {
-		printf("%s, ", args[i]);
-		if(args[i] == "<") {
-			if(firstIO < 0) {
-				firstIO = i;
-			}
-			close(pd[0]);
-			close(1);
-			//open infile for read
-			infile = fopen(args[i + 1], "r");
-		} else if(args[i] == ">") {
-			if(firstIO < 0) {
-				firstIO = i;
-			}
-			close(pd[1]);
-			close(0);
-			//open outfile for writing
-			outfile = fopen(args[i + 1], "w");
-		} else if(strcmp(args[i], ">>") == 0) {
-			if(firstIO < 0) {
-				firstIO = i;
-			}
-			close(pd[1]);
-			close(0);
-			//open outfile for appending
-			outfile = fopen(args[i + 1], "a");
-		}
-	}
-	printf("]\n");
-
-	if(firstIO > 0) {
-		//If there is any I/O redirection, adjust the array so the program doesn't get confused by those inputs
-		args[firstIO] = NULL;
-		numArgs = firstIO;
-	}
-
 	//Fork process
 	pid = fork();
 	if(pid) { //Parent
@@ -74,12 +30,68 @@ int executeCMD(char* args[], int numArgs) {
 		printf("Error: %s\n", strerror(errno));
 		//return to main loop
 	} else { //child
+		child:
+		int pd[2];
+		
+		//r = pipe(pd);
+		FILE *infile, //verify that these do infact go into the right file descriptors
+			 *outfile;
+		
+		char* command = (char*)malloc(sizeof(char) * 128);
+		printf("Args: [");
+
+		for(; i < numArgs; i++) {
+			printf("%s, ", args[i]);
+			if(strcmp(args[i], "<") == 0) { //input
+				if(firstIO < 0) {
+					firstIO = i;
+				}
+				//close(pd[0]);
+				close(0);
+				//open infile for readfil
+				infile = open(args[i + 1], O_RDONLY); //open(argv[1],O_RDONLY
+				dup(infile);
+			} else if(strcmp(args[i], ">") == 0) { //overwriting
+				if(firstIO < 0) {
+					firstIO = i;
+				}
+				//close(pd[1]);
+				close(1);
+				//open outfile for writing
+				outfile = open(args[i + 1], O_CREAT);
+				dup(outfile);
+			} else if(strcmp(args[i], ">>") == 0) { //appending
+				if(firstIO < 0) {
+					firstIO = i;
+				}
+				//close(pd[1]);
+				close(1);
+				//open outfile for appending
+				outfile = open(args[i + 1], O_APPEND);
+				dup(outfile);
+			}
+		}
+		printf("]\n");
+
+		if(firstIO > 0) {
+			//If there is any I/O redirection, adjust the array so the program doesn't get confused by those inputs
+			args[firstIO] = NULL;
+			numArgs = firstIO;
+		}
+
+
 		//execute command (will be in '/bin/')
 		printf("This is child\n");
 		strcpy(command, "/bin/");
 		strcat(command, args[0]);
 		printf("command: %s\n", command);
 		execv(command, args, enviro);
+		if(infile) {
+			close(infile);
+		}
+		if(outfile) {
+			close(outfile);
+		}
 		printf("Error: %s\n", strerror(errno));
 	}
 }
@@ -99,7 +111,7 @@ int executeCMDs(char* cmds[], int numCommands) {
 		//args[0] = (char*)malloc(sizeof(char) * 128);
 		//strcpy(args[0], token);
 		//args[0] = token;
-		//j = 1; //the first command is the filename
+		j = 0; //the first command is the filename
 		while(token != NULL) {
 			args[j] = strdup(token);
 			//args[j] = token;
@@ -109,5 +121,6 @@ int executeCMDs(char* cmds[], int numCommands) {
 		}
 		args[j] = NULL;
 		executeCMD(args, j);
+		memset(args, 0, 64);
 	}
 }
