@@ -7,4 +7,4 @@
 #include <fcntl.h>
 
 int executeCMDs(char* cmds[], int numCommands);
-int executeCMD(char* args[], int numArgs);
+int executeCMD(char* args[], char* args2[], int numArgs, int numArgs2);

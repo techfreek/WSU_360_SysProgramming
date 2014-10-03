@@ -63,22 +63,22 @@ int handlePipes(char* line, char* commands[], int numPipes) {
 	for(i = 0; i < numPipes; i++) {
 		char string[32];
 		
-		if(i == 0 && numPipes > 1) { //Don't bother if we have only 1 command
-			strcat(temp, " < .io");
+		/*if(i == 0 && numPipes > 1) { //Don't bother if we have only 1 command
+			strcat(temp, " > io");
 			sprintf(string, "%d", i);
 			strcat(temp, string);
 		} else if(i == (numPipes - 1) && numPipes > 1) { //last pipe
-			strcat(temp, " > .io");
+			strcat(temp, " < io");
 			sprintf(string, "%d", i - 1);
 			strcat(temp, string);
 		} else if(numPipes > 2) { //middle man pipes
-			strcat(temp, " > .io");
+			strcat(temp, " < io");
 			sprintf(string, "%d", i - 1);
 			strcat(temp, string);
-			strcat(temp, " < .io");
+			strcat(temp, " > io");
 			sprintf(string, "%d", i);
 			strcat(temp, string);
-		}
+		}*/
 		strcat(commands[i], temp);
 
 		
