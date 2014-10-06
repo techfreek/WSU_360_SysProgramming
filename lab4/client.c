@@ -64,7 +64,9 @@ int client_init(char *argv[])
 int main(int argc, char *argv[ ])
 {
 	int n;
-	char line[MAX], ans[MAX];
+	char line[NETTRANS], ans[NETTRANS], temp[NETTRANS], cmd[MAX];
+
+	char* path;
 
 	if (argc < 3){
 		printf("Usage : client ServerName SeverPort\n");
@@ -76,20 +78,45 @@ int main(int argc, char *argv[ ])
 	printf("********  processing loop  *********\n");
 	while (1){
 		printf("input a line : ");
-		bzero(line, MAX);                // zero out line[ ]
-		fgets(line, MAX, stdin);         // get a line (end with \n) from stdin
+		bzero(line, NETTRANS);                // zero out line[ ]
+		fgets(line, NETTRANS, stdin);         // get a line (end with \n) from stdin
 
 		line[strlen(line)-1] = 0;        // kill \n at end
-		if (line[0]==0)                  // exit if NULL line
+		if (line[0]==0) {                 // exit if NULL line
 			exit(0);
+		}
 
-		// Send ENTIRE line to server
-		n = write(sock, line, MAX);
-		printf("client: wrote n=%d bytes; line=(%s)\n", n, line);
+		strcpy(temp, strdup(line));
+		strcpy(cmd, strtok(temp,  " ")); //get command
+
+		path = strtok(null, " ");
+
+		if(strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) { //'q' is because I am lazy
+
+		} else if(strlen(cmd) > 2 && cmd[0] == 'l') { //process locally
+
+		} else {
+			// Send ENTIRE line to server
+			bzero(line, NETTRANS); //clear it
+			sprintf(line, "::func=%s", cmd);
+			if(path != NULL) {
+				strcat(line, "&path=");
+				strcat(line, path);
+			}
+			n = write(sock, line, NETTRANS);
+			printf("client: wrote n=%d bytes; line=(%s)\n", n, line);
+		}
+
 
 		// Read a line from sock and show it
-		n = read(sock, ans, MAX);
+		n = read(sock, ans, NETTRANS);
 		printf("client: read  n=%d bytes; echo=(%s)\n",n, ans);
+
+		if(strncmp("::", line, 2)) { //if command
+
+		} else {
+			printf("%c", line);
+		}
 	}
 }
 

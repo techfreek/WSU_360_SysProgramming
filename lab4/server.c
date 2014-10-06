@@ -1,6 +1,8 @@
 // This is the echo SERVER server.c
 #include "netlib.h"
 
+void readCommand(char cmd[]);
+
 // Define variables:
 struct sockaddr_in	server_addr, client_addr, name_addr;
 struct hostent *hp;
@@ -10,6 +12,7 @@ int	serverPort;										 // server port number
 int	r, length, n;									 // help variables
 
 // Server initialization code:
+
 
 int server_init(char *name)
 {
@@ -73,7 +76,7 @@ int server_init(char *name)
 int main(int argc, char *argv[])
 {
 	char *hostname;
-	char line[MAX];
+	char line[NETTRANS];
 
 	if (argc < 2) {
 		hostname = "localhost";
@@ -102,7 +105,7 @@ int main(int argc, char *argv[])
 
 		// Processing loop
 		while(1){
-			n = read(newsock, line, MAX);
+			n = read(newsock, line, NETTRANS);
 			if (n==0){
 				printf("server: client died, server loops\n");
 				close(newsock);
@@ -111,6 +114,13 @@ int main(int argc, char *argv[])
 			
 			// show the line string
 			printf("server: read	n=%d bytes; line=[%s]\n", n, line);
+
+			if(strncmp("::", line, 2)) { //if command
+				readCommand(line);
+			} else {
+				printf("%c", line);
+			}
+
 
 			strcat(line, " ECHO");
 
@@ -122,3 +132,45 @@ int main(int argc, char *argv[])
 		}
  	}
 }
+
+void readCommand(char cmd[]) {
+	char *funcPos = strstr(cmd, "::func="),
+		 *pathPos = strstr(cmd, "&path="),
+		 *fileSize = strstr(cmd, "::filesize="),
+		 *fileName = strstr(cmd, "&name="),
+		 *lineSize = strstr(cmd, "&linesize="),
+		 *content = strstr(cmd, "&content=");
+
+	if(funcPos) {
+		printf("Function: %s\n", funcPos);
+	}
+
+	if(pathPos) {
+		printf("Path: %s\n", pathPos);
+	}
+
+	if(fileSize) {
+		printf("filesize: %s\n", fileSize);
+	}
+
+	if(fileName) {
+		printf("fileName: %s\n", fileName);
+	}
+
+	if(lineSize) {
+		printf("lineSize: %s\n", lineSize);
+	}
+
+	if(content) {
+		printf("content: %s\n", content);
+	}
+
+}
+
+/*
+	::filesize=(size)&name=(filename)
+	ex ::filsize=9001&name=overninethousand.txt
+
+	//file line
+	::linesize=(size)&content=(content)
+*/

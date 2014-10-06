@@ -10,6 +10,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #define MAX 256
+#define NETTRANS 2048
+#define FILELINE 1024
+#define null NULL
 
 typedef unsigned short u16;
 typedef unsigned long  u32;
@@ -39,6 +42,15 @@ void myput(char* lpath, int server);
 void getType(struct stat stats,  struct info *infom);
 void getPerms(struct stat stats,  struct info *infom);
 void transfer(char* lpath, char* dpath);
+
+
+/* Protocol Accessors, caller must clean up memory */
+char* getFunction(const char line[]);
+char* getPath(const char line[]);
+int getFilesize(const char line[]);
+char* getFilename(const char line[]);
+int getLinesize(const char line[]);
+char* getContent(const char line[]);
 
 /*
 Server communication protocol:
