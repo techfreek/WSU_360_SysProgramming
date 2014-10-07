@@ -308,14 +308,18 @@ void  getPerms(struct stat stats, struct info *infom) {
 
 char* getFunction(const char line[]) {
 	char* temp = strdup(line);
-	char function = strstr(temp, "func=");
-	int endIndex = 0;
+	char* function = strstr(temp, "func=");
 
 	if(function) {
+		function += 5;
+	
+		int endIndex = 0;
+
 		endIndex = strcspn(function, "&");
 		if(endIndex != strlen(function)) { //there is a second header after this
-			strncpy(function, function, endIndex); //truancate before next header
+			memset(function + endIndex, 0, strlen(function) - endIndex);
 		}
+
 		return function;
 	} else {
 		return NULL;
@@ -324,13 +328,15 @@ char* getFunction(const char line[]) {
 
 char* getPath(const char line[]) {
 	char* temp = strdup(line);
-	char path = strstr(temp, "path=");
-	int endIndex = 0;
+	char* path = strstr(temp, "path=");
 
 	if(path) {
+		path += 5;
+		int endIndex = 0;
+
 		endIndex = strcspn(path, "&");
 		if(endIndex != strlen(path)) { //there is a second header after this
-			strncpy(path, path, endIndex); //truancate before next header
+			memset(path + endIndex, 0, strlen(path) - endIndex);
 		}
 		return path;
 	} else {
@@ -341,13 +347,14 @@ char* getPath(const char line[]) {
 int getFilesize(const char line[]) {
 	int filesize = 0;
 	char* temp = strdup(line);
-	char filesize_str = strstr(temp, "func=");
+	char* filesize_str = strstr(temp, "func=");
 	int endIndex = 0;
 
 	if(filesize_str) {
 		endIndex = strcspn(filesize_str, "&");
 		if(endIndex != strlen(filesize_str)) { //there is a second header after this
-			strncpy(filesize_str, filesize_str, endIndex);  //truancate before next header
+			//strncpy(filesize_str, filesize_str, endIndex);  //truancate before next header
+			memset(filesize_str + endIndex, 0,  strlen(filesize_str) - endIndex);
 		}
 		return atoi(filesize_str);
 	} else {
@@ -358,13 +365,14 @@ int getFilesize(const char line[]) {
 
 char* getFilename(const char line[]) {
 	char* temp = strdup(line);
-	char filename = strstr(temp, "func=");
+	char* filename = strstr(temp, "func=");
 	int endIndex = 0;
 
 	if(filename) {
 		endIndex = strcspn(filename, "&");
 		if(endIndex != strlen(filename)) { //there is a second header after this
-			strncpy(filename, filename, endIndex);  //truancate before next header
+			//strncpy(filename, filename, endIndex);  //truancate before next header
+			memset(filename + endIndex, 0, strlen(filename) - endIndex);
 		}
 		return filename;
 	} else {
@@ -374,13 +382,14 @@ char* getFilename(const char line[]) {
 
 int getLinesize(const char line[]) {
 	char* temp = strdup(line);
-	char linesize_str = strstr(temp, "linesize=");
+	char* linesize_str = strstr(temp, "linesize=");
 	int endIndex = 0;
 
 	if(linesize_str) {
 		endIndex = strcspn(linesize_str, "&");
 		if(endIndex != strlen(linesize_str)) { //there is a second header after this
-			strncpy(linesize_str, linesize_str, endIndex); //truancate before next header
+			//strncpy(linesize_str, linesize_str, endIndex); //truancate before next header
+			memset(linesize_str + endIndex, 0, strlen(linesize_str) - endIndex);
 		}
 		return atoi(linesize_str);
 	} else {
@@ -391,13 +400,14 @@ int getLinesize(const char line[]) {
 
 char* getContent(const char line[]) {
 	char* temp = strdup(line);
-	char content = strstr(temp, "content=");
+	char* content = strstr(temp, "content=");
 	int endIndex = 0;
 
 	if(content) {
 		endIndex = strcspn(content, "&");
 		if(endIndex != strlen(content)) { //there is a second header after this
-			strncpy(content, content, endIndex);
+			//strncpy(content, content, endIndex);
+			memset(content + endIndex, 0, strlen(content) - endIndex);
 		}
 		return content;
 	} else {

@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
 			// show the line string
 			printf("server: read	n=%d bytes; line=[%s]\n", n, line);
 
-			if(strncmp("::", line, 2)) { //if command
+			if(isCommand(line)) { //if command
 				readCommand(line);
 			} else {
-				printf("%c", line);
+				printf("%c\n", line);
 			}
 
 
@@ -134,12 +134,13 @@ int main(int argc, char *argv[])
 }
 
 void readCommand(char cmd[]) {
-	char *funcPos = strstr(cmd, "::func="),
-		 *pathPos = strstr(cmd, "&path="),
-		 *fileSize = strstr(cmd, "::filesize="),
-		 *fileName = strstr(cmd, "&name="),
-		 *lineSize = strstr(cmd, "&linesize="),
-		 *content = strstr(cmd, "&content=");
+	char *funcPos = getFunction(cmd),
+		 *pathPos = getPath(cmd),
+		 *fileName = getFilename(cmd),
+		 *content = getContent(cmd);
+
+	int filesize = getFilesize(cmd),
+		linesize = getLinesize(cmd);
 
 	if(funcPos) {
 		printf("Function: %s\n", funcPos);
@@ -149,16 +150,16 @@ void readCommand(char cmd[]) {
 		printf("Path: %s\n", pathPos);
 	}
 
-	if(fileSize) {
-		printf("filesize: %s\n", fileSize);
+	if(filesize > 0) {
+		printf("filesize: %d\n", filesize);
 	}
 
 	if(fileName) {
 		printf("fileName: %s\n", fileName);
 	}
 
-	if(lineSize) {
-		printf("lineSize: %s\n", lineSize);
+	if(linesize > 0) {
+		printf("lineSize: %d\n", linesize);
 	}
 
 	if(content) {
@@ -174,3 +175,11 @@ void readCommand(char cmd[]) {
 	//file line
 	::linesize=(size)&content=(content)
 */
+
+int isCommand(const char line[]) {
+	if(line[0] == ':' && line[1] == ':') {
+		return 1;
+	} else {
+		return 0;
+	}
+}
