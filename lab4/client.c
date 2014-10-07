@@ -92,9 +92,14 @@ int main(int argc, char *argv[ ])
 		path = strtok(null, " ");
 
 		if(strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) { //'q' is because I am lazy
-
+			exit(0);
 		} else if(strlen(cmd) > 2 && cmd[0] == 'l') { //process locally
-
+			int func = functionLookup((char*)cmd[1]); //Ignore leading l
+			if(func >= 0) {
+				callFunction(func, pathname, 0);
+			} else {
+				printf("Could not find command: %s\n", cmd);
+			}
 		} else {
 			// Send ENTIRE line to server
 			bzero(line, NETTRANS); //clear it

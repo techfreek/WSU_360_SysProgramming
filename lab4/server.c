@@ -117,6 +117,17 @@ int main(int argc, char *argv[])
 
 			if(isCommand(line)) { //if command
 				readCommand(line);
+				char *function = getFunction(line);
+				char *pathname = getFunction(line);
+				
+				int func = functionLookup((char*)cmd[1]); //Ignore leading l
+				
+				if(func >= 0) {
+					callFunction(func, pathname, 1);
+				} else {
+					printf("Could not find command: %s\n", cmd);
+				}
+
 			} else {
 				printf("%c\n", line);
 			}

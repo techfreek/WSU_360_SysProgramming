@@ -2,7 +2,7 @@
 extern int sock, newsock;
 extern char* cwd;
 
-void myls(char *pathname, int server) {
+int myls(char *pathname, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -56,7 +56,7 @@ void myls(char *pathname, int server) {
 
 }
 
-void mycd(char *pathname, int server) {
+int mycd(char *pathname, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -81,7 +81,7 @@ void mycd(char *pathname, int server) {
 	}
 }
 
-void mymkdir(char *pathname, int server) {
+int mymkdir(char *pathname, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -106,7 +106,7 @@ void mymkdir(char *pathname, int server) {
 	}
 }
 
-void myrmdir(char *pathname, int server) {
+int myrmdir(char *pathname, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -131,7 +131,7 @@ void myrmdir(char *pathname, int server) {
 	}
 }
 
-void mycreat(char* pathname, int server) {
+int mycreat(char* pathname, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -156,7 +156,7 @@ void mycreat(char* pathname, int server) {
 	} 
 }
 
-void myrm(char* pathname, int server) {
+int myrm(char* pathname, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -181,7 +181,7 @@ void myrm(char* pathname, int server) {
 	} 
 }
 
-void myget(char* lpath, int server) {
+int myget(char* lpath, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -205,7 +205,7 @@ void myget(char* lpath, int server) {
 	}
 }
 
-void myput(char* lpath, int server) {
+int myput(char* lpath, int server) {
 	int pid = 0, 
 		status = 0,
 		r = 0;
@@ -228,6 +228,32 @@ void myput(char* lpath, int server) {
 		exit(0); //so child doesn't continue back to main loop
 	}
 }
+
+int functionLookup(char* cmd) {
+	char *commands[] = {"ls", "cd", "mkdir", "rmdir", "creat", "rm", "get", "put", 0};
+	int i = 0;
+	while(commands[i] != NULL) {
+		if(strcmp(cmd, commands[i])) {
+			return i;
+		}
+		i++;
+	}
+	return -1;
+}
+
+
+/*
+	Looks up the correct function, calls it and passes along the int signifying if it is the server or client
+*/
+int callFunction(int funcID, char* pathname, int server) {
+	int r = -1;
+	if(i >= 0) {
+		int (*fptr[ ])(char *, int) = {(int (*)())myls, mycd, mymkdir, myrmdir, mycreat, myrm, myget, myput};	
+		r = fptr[funcID](pathname, server);
+	}
+	return r;
+}
+
 
 void transfer(char* lpath, char* dpath) {
 	/* handles the actual put/get process */
