@@ -15,6 +15,7 @@ int myls(char *pathname, int clientFD) {
 	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking: %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//Parent
 		pid = wait(&r);
@@ -79,15 +80,39 @@ int mycd(char *pathname, int clientFD) {
 	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking: %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//Parent
 		pid = wait(&r);
 		if(r > 0) {
-			fprintf(stderr, "CD ran into a problem: %s\n", strerror(errno));
-			printf("CD ran into a problem: %s\n", strerror(errno));
+			char *errorlog = asprintf("CD ran into a problem: %s\n",  strerror(errno));
+			if(clientFD > 0) {
+				write(outFD, errorlog, NETTRANS);
+				
+			} else {
+				printf("%s", errorlog);
+			}
+			free(errorlog);			
 		}
+		endCommunication(clientFD);
 	} else {
-		chdir(pathname);
+		printf("changing directory to path: %s\n", pathname);
+		char temp[MAX];
+		if(clientFD > 0) {
+			getcwd(temp, MAX); //back up just in case
+		}
+
+		r = chdir(pathname);
+		getcwd(cwd, 128); //update current cwd
+
+		if(clientFD > 0) {
+			char* pathptr = strstr(cwd, temp); //check if temp exists in new cwd
+			if(pathptr == NULL) { //went outside of homedir
+				chdir(temp);
+				strcpy(cwd, temp);
+			}
+		}
+		
 		exit(0);
 	}
 }
@@ -102,8 +127,10 @@ int mymkdir(char *pathname, int clientFD) {
 		outFD = clientFD;
 	}
 	
+	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//parent
 		pid = wait(&r);
@@ -111,6 +138,7 @@ int mymkdir(char *pathname, int clientFD) {
 			fprintf(stderr, "<function> ran into a problem: %s\n", strerror(errno));
 			printf("<function> ran into a problem: %s\n", strerror(errno));
 		}
+		endCommunication(clientFD);
 	} else {
 		//Put function here
 		status = mkdir(pathname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -128,8 +156,10 @@ int myrmdir(char *pathname, int clientFD) {
 		outFD = clientFD;
 	}
 	
+	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//parent
 		pid = wait(&r);
@@ -137,6 +167,7 @@ int myrmdir(char *pathname, int clientFD) {
 			fprintf(stderr, "rmdir ran into a problem: %s\n", strerror(errno));
 			printf("rmdir ran into a problem: %s\n", strerror(errno));
 		}
+		endCommunication(clientFD);
 	} else {
 		//Put function here
 		status = rmdir(pathname);
@@ -154,8 +185,10 @@ int mycreat(char* pathname, int clientFD) {
 		outFD = clientFD;
 	}
 	
+	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//parent
 		pid = wait(&r);
@@ -163,6 +196,7 @@ int mycreat(char* pathname, int clientFD) {
 			fprintf(stderr, "creat ran into a problem: %s\n", strerror(errno));
 			printf("creat ran into a problem: %s\n", strerror(errno));
 		}
+		endCommunication(clientFD);
 	} else {
 		//Put function here
 		status = open(pathname, O_CREAT, 00755);
@@ -180,8 +214,10 @@ int myrm(char* pathname, int clientFD) {
 		outFD = clientFD;
 	}
 	
+	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//parent
 		pid = wait(&r);
@@ -189,6 +225,7 @@ int myrm(char* pathname, int clientFD) {
 			fprintf(stderr, "rm ran into a problem: %s\n", strerror(errno));
 			printf("rm ran into a problem: %s\n", strerror(errno));
 		}
+		endCommunication(clientFD);
 	} else {
 		//Put function here
 		status = unlink(pathname);
@@ -202,23 +239,13 @@ int myget(char* lpath, int clientFD) {
 		r = 0,
 		outFD = STDIN_FILENO;
 	
-	if(clientFD > 0) {
-		outFD = clientFD;
+	if(clientFD < 0) {
+		char* buf[NETTRANS];
+		strcpy(buf, "::name=");
+		strcpy(buf, lpath);
+		write(clientFD, buf, NETTRANS);		
 	}
-	
-	if(pid < 0) {
-		fprintf(stderr, "Error forking %s\n", strerror(errno));
-	} else if(pid) {
-		//parent
-		pid = wait(&r);
-		if(r > 0) {
-			fprintf(stderr, "get ran into a problem: %s\n", strerror(errno));
-			printf("get ran into a problem: %s\n", strerror(errno));
-		}
-	} else {
-		//Put function here
-		exit(0); //so child doesn't continue back to main loop
-	}
+	endCommunication(clientFD);
 }
 
 int myput(char* lpath, int clientFD) {
@@ -231,8 +258,10 @@ int myput(char* lpath, int clientFD) {
 		outFD = clientFD;
 	}
 	
+	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
+		endCommunication(clientFD);
 	} else if(pid) {
 		//parent
 		pid = wait(&r);
@@ -240,14 +269,53 @@ int myput(char* lpath, int clientFD) {
 			fprintf(stderr, "put ran into a problem: %s\n", strerror(errno));
 			printf("put ran into a problem: %s\n", strerror(errno));
 		}
+		endCommunication(clientFD);
 	} else {
 		//Put function here
 		exit(0); //so child doesn't continue back to main loop
 	}
 }
 
+int mypwd(char* path, int clientFD) {
+	int pid = 0, 
+		status = 0,
+		r = 0,
+		outFD = STDIN_FILENO;
+
+	if(clientFD > 0) {
+		write(clientFD, cwd, NETTRANS);
+		printf("CWD: %s \n", cwd);
+		endCommunication(clientFD);
+	} else {
+		printf("CWD: %s \n", cwd);
+	}
+}
+
+int mycat(char* path, int clientFD) {
+	//open file
+	//read line
+	//if server
+		//write to client
+	//else
+		//print
+	if(path != null && strlen(path) > 0) {
+		int file = open(path, O_RDONLY, S_IREAD);
+		if(file >= 0) {
+			char buf[FILELINE];
+			while(read(file, buf, FILELINE) > 0) {
+				if(clientFD > 0) {
+					write(clientFD, buf, NETTRANS);
+				} else {
+					printf("%s", buf);
+				}
+			}
+		}
+	}
+	endCommunication(clientFD);
+}
+
 int functionLookup(char* cmd) {
-	char *commands[] = {"ls", "cd", "mkdir", "rmdir", "creat", "rm", "get", "put", 0};
+	char *commands[] = {"ls", "cd", "mkdir", "rmdir", "creat", "rm", "get", "put", "pwd", "cat", 0};
 	int i = 0;
 	while(commands[i] != NULL) {
 		if(strcmp(cmd, commands[i]) == 0) {
@@ -265,16 +333,65 @@ int functionLookup(char* cmd) {
 int callFunction(int funcID, char* pathname, int clientFD) {
 	int r = -1;
 	if(funcID >= 0) {
-		int (*fptr[ ])(char *, int) = {(int (*)())myls, mycd, mymkdir, myrmdir, mycreat, myrm, myget, myput};	
-		r = fptr[funcID](pathname, clientFD);
+		//int (*fptr[ ])(char *, int) = {(int (*)())myls, mycd, mymkdir, myrmdir, mycreat, myrm, myget, myput};	
+		switch(funcID) {
+			case 0:
+				myls(pathname, clientFD);
+				break;
+			case 1:
+				mycd(pathname, clientFD);
+				break;
+			case 2:
+				mymkdir(pathname, clientFD);
+				break;
+			case 3:
+				myrmdir(pathname, clientFD);
+				break;
+			case 4:
+				mycreat(pathname, clientFD);
+				break;
+			case 5:
+				myrm(pathname, clientFD);
+				break;
+			case 6:
+				myget(pathname, clientFD);
+				break;
+			case 7:
+				myput(pathname, clientFD);
+				break;
+			case 8:
+				mypwd(pathname, clientFD);
+				break;
+			case 9:
+				mycat(pathname, clientFD);
+				break;
+			default:
+				printf("Uhhhhhh something went wrong");
+		}
+		return;
+	} else {
+		return -1;	
 	}
-	return r;
+	
 }
 
-
-void transfer(char* lpath, char* dpath) {
+void transfer(char* filename, char* fd) {
 	/* handles the actual put/get process */
+	int file = open(filename, O_WRONLY | O_CREAT, S_IWRITE);
+	int n;
+	if(file > 0) {
+		char buf[FILELINE];
+		while(strcmp(buf, "::DONE") != 0) {
+			n = read(sock, buf, NETTRANS);
+			write(file, buf, n);
+		}
+		endCommunication(fd);
+	} else {
+		write(fd, "Could not create file", NETTRANS);
+		endCommunication(fd);
+	}
 }
+
 
 void getType(struct stat stats,  struct info *infom) {
 	if((stats.st_mode & 0100000) == 0100000) { //reg

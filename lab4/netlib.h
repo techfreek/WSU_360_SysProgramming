@@ -39,9 +39,10 @@ int mycreat(char* pathname, int clientFD);
 int myrm(char* pathname, int clientFD);
 int myget(char* lpath, int clientFD);
 int myput(char* lpath, int clientFD);
+int mypwd(char* path, int clientFD);
 void getType(struct stat stats,  struct info *infom);
 void getPerms(struct stat stats,  struct info *infom);
-void transfer(char* lpath, char* dpath);
+void transfer(char* filename, char* fd);
 
 
 int functionLookup(char* cmd);

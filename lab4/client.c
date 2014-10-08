@@ -86,7 +86,7 @@ int main(int argc, char *argv[ ])
 			exit(0);
 		}
 
-		strcpy(temp, strdup(line));
+		strcpy(temp, line);
 		strcpy(cmd, strtok(temp,  " ")); //get command
 
 		path = strtok(null, " ");
@@ -94,7 +94,8 @@ int main(int argc, char *argv[ ])
 		if(strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) { //'q' is because I am lazy
 			exit(0);
 		} else if(strlen(cmd) > 2 && cmd[0] == 'l') { //process locally
-			int func = functionLookup(&cmd[1]); //Ignore leading l
+			strcpy(cmd, cmd + 1);
+			int func = functionLookup(cmd); //Ignore leading l
 			if(func >= 0) {
 				callFunction(func, path, -1);
 			} else {
@@ -102,12 +103,16 @@ int main(int argc, char *argv[ ])
 			}
 		} else {
 			// Send ENTIRE line to server
-			bzero(line, NETTRANS); //clear it
+			//bzero(line, NETTRANS); //clear it
+			memset(line, 0, NETTRANS);
+			memset(ans, 0, NETTRANS);
 			sprintf(line, "::func=%s", cmd);
+			
 			if(path != NULL) {
 				strcat(line, "&path=");
 				strcat(line, path);
 			}
+
 			n = write(sock, line, NETTRANS);
 
 			while(strcmp(ans, "::DONE") != 0) {
@@ -118,14 +123,14 @@ int main(int argc, char *argv[ ])
 
 
 		// Read a line from sock and show it
-		n = read(sock, ans, NETTRANS);
-		printf("client: read  n=%d bytes; echo=(%s)\n",n, ans);
+		//n = read(sock, ans, NETTRANS);
+		//printf("client: read  n=%d bytes; echo=(%s)\n",n, ans);
 
-		if(strncmp("::", line, 2)) { //if command
+		/*if(strncmp("::", line, 2)) { //if command
 
 		} else {
 			printf("%c", line);
-		}
+		}*/
 	}
 }
 

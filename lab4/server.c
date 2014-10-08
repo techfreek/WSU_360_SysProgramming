@@ -119,24 +119,28 @@ int main(int argc, char *argv[])
 				readCommand(line);
 				char *function = getFunction(line);
 				char *pathname = getPath(line);
+				char *filename = getFilename(line);
 				
-				int func = functionLookup(function);
-				printf("Function ID: %d\n", func);
-				if(func >= 0) {
-					callFunction(func, pathname, newsock);
+				if(filename) {
+					transfer(filename, newsock);
 				} else {
-					printf("Could not find command: %s\n", function);
+					int func = functionLookup(function);
+					printf("Function ID: %d\n", func);
+					if(func >= 0) {
+						callFunction(func, pathname, newsock);
+					} else {
+						printf("Could not find command: %s\n", function);
+					}
 				}
-
 			} else {
 				printf("%c\n", line);
 			}
 
 			// send the echo line to client 
-			n = write(newsock, line, MAX);
-			n = write(newsock, line, MAX);
+			//n = write(newsock, line, MAX);
+			//n = write(newsock, line, MAX);
 
-			printf("%s\n", line);
+			//printf("%s\n", line);
 			printf("server: ready for next request\n");
 		}
  	}
