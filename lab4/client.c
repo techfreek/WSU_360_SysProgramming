@@ -103,21 +103,24 @@ int main(int argc, char *argv[ ])
 			}
 		} else {
 			// Send ENTIRE line to server
-			//bzero(line, NETTRANS); //clear it
-			memset(line, 0, NETTRANS);
-			memset(ans, 0, NETTRANS);
-			sprintf(line, "::func=%s", cmd);
+			memset(line, 0, NETTRANS);  //clear it
+			memset(ans, 0, NETTRANS); //clear it
 			
-			if(path != NULL) {
-				strcat(line, "&path=");
-				strcat(line, path);
-			}
+			if(strcmp(cmd, "put")) { //this is the only function that has a different format
+				myput(path, sock);
+			} else {
+				sprintf(line, "::func=%s", cmd);
+				if(path != NULL) {
+					strcat(line, "&path=");
+					strcat(line, path);
+				}
 
-			n = write(sock, line, NETTRANS);
+				n = write(sock, line, NETTRANS);
 
-			while(strcmp(ans, "::DONE") != 0) {
-				n = read(sock, ans, NETTRANS);
-				printf("%s\n", ans);
+				while(strcmp(ans, "::DONE") != 0) {
+					n = read(sock, ans, NETTRANS);
+					printf("%s\n", ans);
+				}
 			}
 		}
 

@@ -77,44 +77,34 @@ int mycd(char *pathname, int clientFD) {
 		outFD = clientFD;
 	}
 
-	pid = fork();
-	if(pid < 0) {
-		fprintf(stderr, "Error forking: %s\n", strerror(errno));
-		endCommunication(clientFD);
-	} else if(pid) {
-		//Parent
-		pid = wait(&r);
-		if(r > 0) {
-			char *errorlog = asprintf("CD ran into a problem: %s\n",  strerror(errno));
-			if(clientFD > 0) {
-				write(outFD, errorlog, NETTRANS);
-				
-			} else {
-				printf("%s", errorlog);
-			}
-			free(errorlog);			
-		}
-		endCommunication(clientFD);
-	} else {
-		printf("changing directory to path: %s\n", pathname);
-		char temp[MAX];
-		if(clientFD > 0) {
-			getcwd(temp, MAX); //back up just in case
-		}
-
-		r = chdir(pathname);
-		getcwd(cwd, 128); //update current cwd
-
-		if(clientFD > 0) {
-			char* pathptr = strstr(cwd, temp); //check if temp exists in new cwd
-			if(pathptr == NULL) { //went outside of homedir
-				chdir(temp);
-				strcpy(cwd, temp);
-			}
-		}
-		
-		exit(0);
+	printf("changing directory to path: %s\n", pathname);
+	char temp[MAX];
+	if(clientFD > 0) {
+		getcwd(temp, MAX); //back up just in case
 	}
+
+	r = chdir(pathname);
+	getcwd(cwd, 128); //update current cwd
+
+	if(clientFD > 0) {
+		char* pathptr = strstr(cwd, temp); //check if temp exists in new cwd
+		if(pathptr == NULL) { //went outside of homedir
+			chdir(temp);
+			strcpy(cwd, temp);
+		}
+	}
+	
+	if(r > 0) {
+		char *errorlog = asprintf("CD ran into a problem: %s\n",  strerror(errno));
+		if(clientFD > 0) {
+			write(outFD, errorlog, NETTRANS);
+			
+		} else {
+			printf("%s", errorlog);
+		}
+		free(errorlog);			
+	}
+	endCommunication(clientFD);
 }
 
 int mymkdir(char *pathname, int clientFD) {
@@ -253,10 +243,32 @@ int myput(char* lpath, int clientFD) {
 		status = 0,
 		r = 0,
 		outFD = STDIN_FILENO;
-	
-	if(clientFD > 0) {
-		outFD = clientFD;
+
+	char buf[FILELINE];
+
+	strcpy(buf, "::name="); //write the filename to it
+	strcat(buf, lpath);
+
+	write(clientFD, buf, NETTRANS);
+
+
+	/* handles the actual put/get process */
+	int file = open(lpath, O_WRONLY | O_CREAT, S_IREAD);
+	int n;
+
+	if(file > 0) {
+		char buf[FILELINE];
+		while(read(file, buf, FILELINE) != 0) {
+			write(clientFD, buf, NETTRANS);
+		}
+		endCommunication(clientFD);
+	} else {
+		write(clientFD, "Could not create file", NETTRANS);
+		endCommunication(clientFD);
 	}
+
+
+
 	
 	pid = fork();
 	if(pid < 0) {
@@ -273,6 +285,24 @@ int myput(char* lpath, int clientFD) {
 	} else {
 		//Put function here
 		exit(0); //so child doesn't continue back to main loop
+	}
+}
+
+
+void transfer(char* filename, char* fd) {
+	/* handles the actual put/get process */
+	int file = open(filename, O_WRONLY | O_CREAT, S_IWRITE);
+	int n;
+	if(file > 0) {
+		char buf[FILELINE];
+		while(strcmp(buf, "::DONE") != 0) {
+			n = read(sock, buf, NETTRANS);
+			write(file, buf, n);
+		}
+		endCommunication(fd);
+	} else {
+		write(fd, "Could not create file", NETTRANS);
+		endCommunication(fd);
 	}
 }
 
@@ -315,7 +345,7 @@ int mycat(char* path, int clientFD) {
 }
 
 int functionLookup(char* cmd) {
-	char *commands[] = {"ls", "cd", "mkdir", "rmdir", "creat", "rm", "get", "put", "pwd", "cat", 0};
+	char *commands[] = {"ls", "cd", "mkdir", "rmdir", "creat", "rm", "get", "pwd", "cat", 0};
 	int i = 0;
 	while(commands[i] != NULL) {
 		if(strcmp(cmd, commands[i]) == 0) {
@@ -357,12 +387,9 @@ int callFunction(int funcID, char* pathname, int clientFD) {
 				myget(pathname, clientFD);
 				break;
 			case 7:
-				myput(pathname, clientFD);
-				break;
-			case 8:
 				mypwd(pathname, clientFD);
 				break;
-			case 9:
+			case 8:
 				mycat(pathname, clientFD);
 				break;
 			default:
@@ -374,24 +401,6 @@ int callFunction(int funcID, char* pathname, int clientFD) {
 	}
 	
 }
-
-void transfer(char* filename, char* fd) {
-	/* handles the actual put/get process */
-	int file = open(filename, O_WRONLY | O_CREAT, S_IWRITE);
-	int n;
-	if(file > 0) {
-		char buf[FILELINE];
-		while(strcmp(buf, "::DONE") != 0) {
-			n = read(sock, buf, NETTRANS);
-			write(file, buf, n);
-		}
-		endCommunication(fd);
-	} else {
-		write(fd, "Could not create file", NETTRANS);
-		endCommunication(fd);
-	}
-}
-
 
 void getType(struct stat stats,  struct info *infom) {
 	if((stats.st_mode & 0100000) == 0100000) { //reg
