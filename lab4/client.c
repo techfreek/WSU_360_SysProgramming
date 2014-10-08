@@ -94,9 +94,9 @@ int main(int argc, char *argv[ ])
 		if(strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) { //'q' is because I am lazy
 			exit(0);
 		} else if(strlen(cmd) > 2 && cmd[0] == 'l') { //process locally
-			int func = functionLookup((char*)cmd[1]); //Ignore leading l
+			int func = functionLookup(&cmd[1]); //Ignore leading l
 			if(func >= 0) {
-				callFunction(func, pathname, 0);
+				callFunction(func, path, -1);
 			} else {
 				printf("Could not find command: %s\n", cmd);
 			}
@@ -109,7 +109,11 @@ int main(int argc, char *argv[ ])
 				strcat(line, path);
 			}
 			n = write(sock, line, NETTRANS);
-			printf("client: wrote n=%d bytes; line=(%s)\n", n, line);
+
+			while(strcmp(ans, "::DONE") != 0) {
+				n = read(sock, ans, NETTRANS);
+				printf("%s\n", ans);
+			}
 		}
 
 

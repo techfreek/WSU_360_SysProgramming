@@ -2,14 +2,14 @@
 extern int sock, newsock;
 extern char* cwd;
 
-int myls(char *pathname, int server) {
+int myls(char *pathname, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
+		r = 0,
+		outFD = STDIN_FILENO;
 	
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
 
 	pid = fork();
@@ -19,14 +19,17 @@ int myls(char *pathname, int server) {
 		//Parent
 		pid = wait(&r);
 		if(r > 0) {
-			fprintf(stderr, "CD ran into a problem: %s\n", strerror(errno));
-			printf("CD ran into a problem: %s\n", strerror(errno));
+			fprintf(stderr, "LS ran into a problem: %s\n", strerror(errno));
+			printf("LS ran into a problem: %s\n", strerror(errno));
 		}
+		endCommunication(clientFD);
 	} else {
 		struct stat stats;
 		struct info *infom;
 
-		if(strlen(pathname) == 0) {
+		if(pathname == NULL) {
+			pathname = cwd;
+		} else if(strlen(pathname) == 0) {
 			strcpy(pathname, cwd);
 		}
 		
@@ -37,34 +40,42 @@ int myls(char *pathname, int server) {
 			
 			while(ep != NULL) {
 				lstat(ep->d_name, &stats);
-				getType(stats, infom);
+				/*getType(stats, infom);
 				getPerms(stats, infom);
 				infom->uid = stats.st_uid;
 				infom->gid = stats.st_gid;
 				infom->size = stats.st_size;
 				infom->date = (char*)ctime(&stats.st_ctime);
-				infom->date[strlen(infom->date) - 1] = '\0'; //knocks off /n from the end of date
-				printf("%c%s %u %u %lu %s %s\n", infom->type, infom->permissions, infom->uid, infom->gid, infom->size,  infom->date, ep->d_name);
+				infom->date[strlen(infom->date) - 1] = '\0'; //knocks off /n from the end of date*/
+				//printf("%c%s %u %u %lu %s %s\n", infom->type, infom->permissions, infom->uid, infom->gid, infom->size,  infom->date, ep->d_name);
+				//printf("%s ", ep->d_name);
 				ep = readdir(dp);
+				if(ep->d_name[0] != '.') {
+					if(clientFD > 0) {
+						write(outFD, ep->d_name, NETTRANS);
+					} else {
+						printf("%s \n", ep->d_name);
+					}
+				}
 			}
 		} else {
 			printf("Could not open '%s'\n", pathname);
 		}
-		
 		exit(0);
-	}
+	} 
 
 }
 
-int mycd(char *pathname, int server) {
+int mycd(char *pathname, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+
 	pid = fork();
 	if(pid < 0) {
 		fprintf(stderr, "Error forking: %s\n", strerror(errno));
@@ -81,15 +92,16 @@ int mycd(char *pathname, int server) {
 	}
 }
 
-int mymkdir(char *pathname, int server) {
+int mymkdir(char *pathname, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+	
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
 	} else if(pid) {
@@ -106,15 +118,16 @@ int mymkdir(char *pathname, int server) {
 	}
 }
 
-int myrmdir(char *pathname, int server) {
+int myrmdir(char *pathname, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+	
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
 	} else if(pid) {
@@ -131,15 +144,16 @@ int myrmdir(char *pathname, int server) {
 	}
 }
 
-int mycreat(char* pathname, int server) {
+int mycreat(char* pathname, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+	
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
 	} else if(pid) {
@@ -156,15 +170,16 @@ int mycreat(char* pathname, int server) {
 	} 
 }
 
-int myrm(char* pathname, int server) {
+int myrm(char* pathname, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+	
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
 	} else if(pid) {
@@ -181,15 +196,16 @@ int myrm(char* pathname, int server) {
 	} 
 }
 
-int myget(char* lpath, int server) {
+int myget(char* lpath, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+	
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
 	} else if(pid) {
@@ -205,15 +221,16 @@ int myget(char* lpath, int server) {
 	}
 }
 
-int myput(char* lpath, int server) {
+int myput(char* lpath, int clientFD) {
 	int pid = 0, 
 		status = 0,
-		r = 0;
-
-	if(server) {
-		close(1);
-		dup2(newsock, 1);
+		r = 0,
+		outFD = STDIN_FILENO;
+	
+	if(clientFD > 0) {
+		outFD = clientFD;
 	}
+	
 	if(pid < 0) {
 		fprintf(stderr, "Error forking %s\n", strerror(errno));
 	} else if(pid) {
@@ -233,7 +250,7 @@ int functionLookup(char* cmd) {
 	char *commands[] = {"ls", "cd", "mkdir", "rmdir", "creat", "rm", "get", "put", 0};
 	int i = 0;
 	while(commands[i] != NULL) {
-		if(strcmp(cmd, commands[i])) {
+		if(strcmp(cmd, commands[i]) == 0) {
 			return i;
 		}
 		i++;
@@ -243,13 +260,13 @@ int functionLookup(char* cmd) {
 
 
 /*
-	Looks up the correct function, calls it and passes along the int signifying if it is the server or client
+	Looks up the correct function, calls it and passes along the int signifying if it is the clientFD or client
 */
-int callFunction(int funcID, char* pathname, int server) {
+int callFunction(int funcID, char* pathname, int clientFD) {
 	int r = -1;
-	if(i >= 0) {
+	if(funcID >= 0) {
 		int (*fptr[ ])(char *, int) = {(int (*)())myls, mycd, mymkdir, myrmdir, mycreat, myrm, myget, myput};	
-		r = fptr[funcID](pathname, server);
+		r = fptr[funcID](pathname, clientFD);
 	}
 	return r;
 }
@@ -373,10 +390,11 @@ char* getPath(const char line[]) {
 int getFilesize(const char line[]) {
 	int filesize = 0;
 	char* temp = strdup(line);
-	char* filesize_str = strstr(temp, "func=");
+	char* filesize_str = strstr(temp, "filesize=");
 	int endIndex = 0;
 
 	if(filesize_str) {
+		filesize += 9;
 		endIndex = strcspn(filesize_str, "&");
 		if(endIndex != strlen(filesize_str)) { //there is a second header after this
 			//strncpy(filesize_str, filesize_str, endIndex);  //truancate before next header
@@ -390,11 +408,30 @@ int getFilesize(const char line[]) {
 }
 
 char* getFilename(const char line[]) {
+	/*char* temp = strdup(line);
+	char* function = strstr(temp, "func=");
+
+	if(function) {
+		function += 5;
+	
+		int endIndex = 0;
+
+		endIndex = strcspn(function, "&");
+		if(endIndex != strlen(function)) { //there is a second header after this
+			memset(function + endIndex, 0, strlen(function) - endIndex);
+		}
+
+		return function;
+	} else {
+		return NULL;
+	}*/
+
 	char* temp = strdup(line);
-	char* filename = strstr(temp, "func=");
+	char* filename = strstr(temp, "name=");
 	int endIndex = 0;
 
 	if(filename) {
+		filename += 5;
 		endIndex = strcspn(filename, "&");
 		if(endIndex != strlen(filename)) { //there is a second header after this
 			//strncpy(filename, filename, endIndex);  //truancate before next header
@@ -412,6 +449,7 @@ int getLinesize(const char line[]) {
 	int endIndex = 0;
 
 	if(linesize_str) {
+		linesize_str += 9;
 		endIndex = strcspn(linesize_str, "&");
 		if(endIndex != strlen(linesize_str)) { //there is a second header after this
 			//strncpy(linesize_str, linesize_str, endIndex); //truancate before next header
@@ -430,6 +468,7 @@ char* getContent(const char line[]) {
 	int endIndex = 0;
 
 	if(content) {
+		content += 8;
 		endIndex = strcspn(content, "&");
 		if(endIndex != strlen(content)) { //there is a second header after this
 			//strncpy(content, content, endIndex);
@@ -438,5 +477,12 @@ char* getContent(const char line[]) {
 		return content;
 	} else {
 		return NULL;
+	}
+}
+
+void endCommunication(int clientFD) {
+	if(clientFD > 0) {
+		write(clientFD, "::DONE", NETTRANS);		
+		printf("Ending client communication\n");
 	}
 }

@@ -31,21 +31,21 @@ struct info {
     char* date;
 };
 
-int myls(char *pathname, int server);
-int mycd(char *pathname, int server); //Should be implemented in the client/server file
-int mymkdir(char *pathname, int server);
-int myrmdir(char *pathname, int server);
-int mycreat(char* pathname, int server);
-int myrm(char* pathname, int server);
-int myget(char* lpath, int server);
-int myput(char* lpath, int server);
+int myls(char *pathname, int clientFD);
+int mycd(char *pathname, int clientFD); //Should be implemented in the client/server file
+int mymkdir(char *pathname, int clientFD);
+int myrmdir(char *pathname, int clientFD);
+int mycreat(char* pathname, int clientFD);
+int myrm(char* pathname, int clientFD);
+int myget(char* lpath, int clientFD);
+int myput(char* lpath, int clientFD);
 void getType(struct stat stats,  struct info *infom);
 void getPerms(struct stat stats,  struct info *infom);
 void transfer(char* lpath, char* dpath);
 
 
 int functionLookup(char* cmd);
-int callFunction(int funcID, char* pathname, int server);
+int callFunction(int funcID, char* pathname, int clientFD);
 
 /* Protocol Accessors, caller must clean up memory */
 char* getFunction(const char line[]);
@@ -71,4 +71,7 @@ Server communication protocol:
 	//file line
 	::linesize=(size)&content=(content)
 	ex ::linesize=1024&content=trollololololololololololol\n\0
+
+	//end of communication
+	::DONE
 */

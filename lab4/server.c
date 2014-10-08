@@ -113,32 +113,30 @@ int main(int argc, char *argv[])
 			}
 			
 			// show the line string
-			printf("server: read	n=%d bytes; line=[%s]\n", n, line);
+			//printf("server: read	n=%d bytes; line=[%s]\n", n, line);
 
 			if(isCommand(line)) { //if command
 				readCommand(line);
 				char *function = getFunction(line);
-				char *pathname = getFunction(line);
+				char *pathname = getPath(line);
 				
-				int func = functionLookup((char*)cmd[1]); //Ignore leading l
-				
+				int func = functionLookup(function);
+				printf("Function ID: %d\n", func);
 				if(func >= 0) {
-					callFunction(func, pathname, 1);
+					callFunction(func, pathname, newsock);
 				} else {
-					printf("Could not find command: %s\n", cmd);
+					printf("Could not find command: %s\n", function);
 				}
 
 			} else {
 				printf("%c\n", line);
 			}
 
-
-			strcat(line, " ECHO");
-
 			// send the echo line to client 
 			n = write(newsock, line, MAX);
+			n = write(newsock, line, MAX);
 
-			printf("server: wrote n=%d bytes; ECHO=[%s]\n", n, line);
+			printf("%s\n", line);
 			printf("server: ready for next request\n");
 		}
  	}
