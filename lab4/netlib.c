@@ -1,6 +1,7 @@
 #include "netlib.h"
 extern int sock, newsock;
 extern char* cwd;
+extern char* rootcwd;
 
 int myls(char *pathname, int clientFD) {
 	int pid = 0, 
@@ -50,7 +51,7 @@ int myls(char *pathname, int clientFD) {
 				infom->date[strlen(infom->date) - 1] = '\0'; //knocks off /n from the end of date*/
 				//printf("%c%s %u %u %lu %s %s\n", infom->type, infom->permissions, infom->uid, infom->gid, infom->size,  infom->date, ep->d_name);
 				//printf("%s ", ep->d_name);
-				ep = readdir(dp);
+				
 				if(ep->d_name[0] != '.') {
 					if(clientFD > 0) {
 						write(outFD, ep->d_name, NETTRANS);
@@ -58,6 +59,7 @@ int myls(char *pathname, int clientFD) {
 						printf("%s \n", ep->d_name);
 					}
 				}
+				ep = readdir(dp);
 			}
 		} else {
 			printf("Could not open '%s'\n", pathname);
@@ -87,7 +89,7 @@ int mycd(char *pathname, int clientFD) {
 	getcwd(cwd, 128); //update current cwd
 
 	if(clientFD > 0) {
-		char* pathptr = strstr(cwd, temp); //check if temp exists in new cwd
+		char* pathptr = strstr(cwd, rootcwd); //check if temp exists in new cwd
 		if(pathptr == NULL) { //went outside of homedir
 			chdir(temp);
 			strcpy(cwd, temp);
@@ -229,11 +231,21 @@ int myget(char* lpath, int clientFD) {
 		r = 0,
 		outFD = STDIN_FILENO;
 	
-	if(clientFD < 0) {
-		char* buf[NETTRANS];
+	if(clientFD > 0) {
+		char buf[NETTRANS];
 		strcpy(buf, "::name=");
-		strcpy(buf, lpath);
+		strcat(buf, lpath);
+		printf("%s\n", buf);
 		write(clientFD, buf, NETTRANS);		
+
+			/* handles the actual put/get process */
+		int file = open(lpath, O_WRONLY | O_CREAT, S_IREAD);
+		int n;
+
+		while(read(file, buf, FILELINE) > 0) {
+			write(clientFD, buf, NETTRANS);
+		}
+
 	}
 	endCommunication(clientFD);
 }
@@ -256,36 +268,10 @@ int myput(char* lpath, int clientFD) {
 	int file = open(lpath, O_WRONLY | O_CREAT, S_IREAD);
 	int n;
 
-	if(file > 0) {
-		char buf[FILELINE];
-		while(read(file, buf, FILELINE) != 0) {
-			write(clientFD, buf, NETTRANS);
-		}
-		endCommunication(clientFD);
-	} else {
-		write(clientFD, "Could not create file", NETTRANS);
-		endCommunication(clientFD);
+	while(read(file, buf, FILELINE) > 0) {
+		write(clientFD, buf, NETTRANS);
 	}
-
-
-
-	
-	pid = fork();
-	if(pid < 0) {
-		fprintf(stderr, "Error forking %s\n", strerror(errno));
-		endCommunication(clientFD);
-	} else if(pid) {
-		//parent
-		pid = wait(&r);
-		if(r > 0) {
-			fprintf(stderr, "put ran into a problem: %s\n", strerror(errno));
-			printf("put ran into a problem: %s\n", strerror(errno));
-		}
-		endCommunication(clientFD);
-	} else {
-		//Put function here
-		exit(0); //so child doesn't continue back to main loop
-	}
+	endCommunication(clientFD);
 }
 
 
@@ -294,10 +280,15 @@ void transfer(char* filename, char* fd) {
 	int file = open(filename, O_WRONLY | O_CREAT, S_IWRITE);
 	int n;
 	if(file > 0) {
-		char buf[FILELINE];
+		char buf[NETTRANS];
+		char *line;
 		while(strcmp(buf, "::DONE") != 0) {
 			n = read(sock, buf, NETTRANS);
-			write(file, buf, n);
+			line = getContent(buf);
+			if(line != NULL) {
+				printf("Got line: %s\n", line);
+				write(file, line, strlen(line));
+			}
 		}
 		endCommunication(fd);
 	} else {
@@ -312,9 +303,21 @@ int mypwd(char* path, int clientFD) {
 		r = 0,
 		outFD = STDIN_FILENO;
 
+	char buf[FILELINE];
+
 	if(clientFD > 0) {
-		write(clientFD, cwd, NETTRANS);
-		printf("CWD: %s \n", cwd);
+		char* d = cwd + (strlen(rootcwd));
+
+		if(*d != '/') {
+			strcpy(buf, "/");	
+			strcat(buf, d);
+		} else {
+			strcpy(buf, d);
+		}
+		
+		printf("CWD: %s \n", buf);
+		write(clientFD, buf, NETTRANS);
+		
 		endCommunication(clientFD);
 	} else {
 		printf("CWD: %s \n", cwd);
@@ -534,24 +537,6 @@ int getFilesize(const char line[]) {
 }
 
 char* getFilename(const char line[]) {
-	/*char* temp = strdup(line);
-	char* function = strstr(temp, "func=");
-
-	if(function) {
-		function += 5;
-	
-		int endIndex = 0;
-
-		endIndex = strcspn(function, "&");
-		if(endIndex != strlen(function)) { //there is a second header after this
-			memset(function + endIndex, 0, strlen(function) - endIndex);
-		}
-
-		return function;
-	} else {
-		return NULL;
-	}*/
-
 	char* temp = strdup(line);
 	char* filename = strstr(temp, "name=");
 	int endIndex = 0;
@@ -610,5 +595,13 @@ void endCommunication(int clientFD) {
 	if(clientFD > 0) {
 		write(clientFD, "::DONE", NETTRANS);		
 		printf("Ending client communication\n");
+	}
+}
+
+int isStrEq(const char* str1, const char* str2) {
+	if(strcmp(str1, str2) == 0) {
+		return 1;
+	} else {
+		return 0;
 	}
 }

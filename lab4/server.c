@@ -11,6 +11,9 @@ extern int	sock, newsock;									// socket descriptors
 int	serverPort;										 // server port number
 int	r, length, n;									 // help variables
 
+extern char* cwd;
+extern char* rootcwd;
+
 // Server initialization code:
 
 
@@ -18,6 +21,7 @@ int server_init(char *name)
 {
 	cwd = (char*)malloc(sizeof(char) * 128);
 	getcwd(cwd, 128);
+	rootcwd = strdup(cwd);
 	
 	printf("==================== server init ======================\n");	 
 	 // get DOT name and IP address of this host
@@ -130,6 +134,7 @@ int main(int argc, char *argv[])
 						callFunction(func, pathname, newsock);
 					} else {
 						printf("Could not find command: %s\n", function);
+						endCommunication(newsock);
 					}
 				}
 			} else {

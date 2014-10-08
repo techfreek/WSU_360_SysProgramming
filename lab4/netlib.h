@@ -21,6 +21,7 @@ int	sock, //what I listen to
 	newsock; //What I write to
 
 char *cwd;
+char *rootcwd;
 
 struct info {
     char type;  /* d, l, or - */

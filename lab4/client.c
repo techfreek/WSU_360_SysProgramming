@@ -77,7 +77,7 @@ int main(int argc, char *argv[ ])
 
 	printf("********  processing loop  *********\n");
 	while (1){
-		printf("input a line : ");
+		printf("input a line: ");
 		bzero(line, NETTRANS);                // zero out line[ ]
 		fgets(line, NETTRANS, stdin);         // get a line (end with \n) from stdin
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[ ])
 
 		path = strtok(null, " ");
 
-		if(strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) { //'q' is because I am lazy
+		if(isStrEq(cmd, "quit") || isStrEq(cmd, "q")) { //'q' is because I am lazy
 			exit(0);
 		} else if(strlen(cmd) > 2 && cmd[0] == 'l') { //process locally
 			strcpy(cmd, cmd + 1);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[ ])
 			memset(line, 0, NETTRANS);  //clear it
 			memset(ans, 0, NETTRANS); //clear it
 			
-			if(strcmp(cmd, "put")) { //this is the only function that has a different format
+			if(isStrEq(cmd, "put")) { //this is the only function that has a different format
 				myput(path, sock);
 			} else {
 				sprintf(line, "::func=%s", cmd);
@@ -116,10 +116,18 @@ int main(int argc, char *argv[ ])
 				}
 
 				n = write(sock, line, NETTRANS);
+				n = read(sock, ans, NETTRANS); //read response
 
-				while(strcmp(ans, "::DONE") != 0) {
-					n = read(sock, ans, NETTRANS);
-					printf("%s\n", ans);
+				char *filename = getFilename(ans);
+
+				if(filename) {
+					printf("Recieving file: %s\n", filename);
+					transfer(filename, sock);
+				} else {
+					while(!isStrEq(ans, "::DONE")) {
+						printf("%s\n", ans);
+						n = read(sock, ans, NETTRANS);
+					}
 				}
 			}
 		}
