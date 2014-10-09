@@ -242,19 +242,24 @@ int myget(char* lpath, int clientFD) {
 		printf("%s\n", buf);
 		write(clientFD, buf, NETTRANS);		
 
-			/* handles the actual put/get process */
 		file = open(lpath, O_RDONLY);
+		read(clientFD, buf, FILELINE);
 
-		
+			/* handles the actual put/get process */
 
-		n = read(file, buf, FILELINE);
-		while(n > 0) {
-			strcpy(buffer, "::content=");
-			strcat(buffer, buf);
-			write(clientFD, buffer, NETTRANS);
-			memset(buffer, 0, NETTRANS);		
-
+		if(file >= 0) {
+			memset(buf, 0, NETTRANS);
 			n = read(file, buf, FILELINE);
+			while(n > 0) {
+				strcpy(buffer, "::content=");
+				strcat(buffer, buf);
+				write(clientFD, buffer, NETTRANS);
+				memset(buffer, 0, NETTRANS);		
+
+				n = read(file, buf, FILELINE);
+			}
+		} else {
+			printf("Could not open file: %s\n", lpath);
 		}
 
 	}
@@ -274,8 +279,9 @@ void transfer(char* filename, int fd) {
 	if(file > 0) {
 		char buf[NETTRANS];
 		char *line;
+		write(fd, "::ACK", NETTRANS); //State I am ready for data
+		n = read(fd, buf, NETTRANS);
 		while(strcmp(buf, "::DONE") != 0) {
-			n = read(sock, buf, NETTRANS);
 			line = getContent(buf);
 
 			if(line != NULL) {
@@ -283,9 +289,10 @@ void transfer(char* filename, int fd) {
 				if(*(line + lineLength - 1) == 1) {
 					lineLength -= 2;
 				}
-				//printf("Got line: %s\n", line);
+				printf("Got line: %s\n", line);
 				write(file, line, lineLength);
 			}
+			n = read(fd, buf, NETTRANS);
 		}
 	} else {
 		printf("Could not create file\n");

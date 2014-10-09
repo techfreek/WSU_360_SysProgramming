@@ -74,6 +74,9 @@ Server communication protocol:
 	::linesize=(size)&content=(content)
 	ex ::linesize=1024&content=trollololololololololololol\n\0
 
+	//ready line
+	::ACK
+	
 	//end of communication
 	::DONE
 */
