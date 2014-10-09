@@ -43,7 +43,7 @@ int myput(char* lpath, int clientFD);
 int mypwd(char* path, int clientFD);
 void getType(struct stat stats,  struct info *infom);
 void getPerms(struct stat stats,  struct info *infom);
-void transfer(char* filename, char* fd);
+void transfer(char* filename, int fd);
 
 
 int functionLookup(char* cmd);

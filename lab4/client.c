@@ -131,17 +131,6 @@ int main(int argc, char *argv[ ])
 				}
 			}
 		}
-
-
-		// Read a line from sock and show it
-		//n = read(sock, ans, NETTRANS);
-		//printf("client: read  n=%d bytes; echo=(%s)\n",n, ans);
-
-		/*if(strncmp("::", line, 2)) { //if command
-
-		} else {
-			printf("%c", line);
-		}*/
 	}
 }
 

@@ -229,21 +229,32 @@ int myget(char* lpath, int clientFD) {
 	int pid = 0, 
 		status = 0,
 		r = 0,
-		outFD = STDIN_FILENO;
-	
+		outFD = STDIN_FILENO,
+		n = 0,
+		file = 0;
+
+	char buf[NETTRANS];
+	char buffer[FILELINE];
+
 	if(clientFD > 0) {
-		char buf[NETTRANS];
 		strcpy(buf, "::name=");
 		strcat(buf, lpath);
 		printf("%s\n", buf);
 		write(clientFD, buf, NETTRANS);		
 
 			/* handles the actual put/get process */
-		int file = open(lpath, O_WRONLY | O_CREAT, S_IREAD);
-		int n;
+		file = open(lpath, O_RDONLY);
 
-		while(read(file, buf, FILELINE) > 0) {
-			write(clientFD, buf, NETTRANS);
+		
+
+		n = read(file, buf, FILELINE);
+		while(n > 0) {
+			strcpy(buffer, "::content=");
+			strcat(buffer, buf);
+			write(clientFD, buffer, NETTRANS);
+			memset(buffer, 0, NETTRANS);		
+
+			n = read(file, buf, FILELINE);
 		}
 
 	}
@@ -251,50 +262,36 @@ int myget(char* lpath, int clientFD) {
 }
 
 int myput(char* lpath, int clientFD) {
-	int pid = 0, 
-		status = 0,
-		r = 0,
-		outFD = STDIN_FILENO;
-
-	char buf[FILELINE];
-
-	strcpy(buf, "::name="); //write the filename to it
-	strcat(buf, lpath);
-
-	write(clientFD, buf, NETTRANS);
-
-
-	/* handles the actual put/get process */
-	int file = open(lpath, O_WRONLY | O_CREAT, S_IREAD);
-	int n;
-
-	while(read(file, buf, FILELINE) > 0) {
-		write(clientFD, buf, NETTRANS);
-	}
-	endCommunication(clientFD);
+	myget(lpath, clientFD);
 }
 
 
-void transfer(char* filename, char* fd) {
+void transfer(char* filename, int fd) {
 	/* handles the actual put/get process */
-	int file = open(filename, O_WRONLY | O_CREAT, S_IWRITE);
+	int file = open(filename, O_CREAT|O_WRONLY, 0666);
 	int n;
+	int lineLength = 0;
 	if(file > 0) {
 		char buf[NETTRANS];
 		char *line;
 		while(strcmp(buf, "::DONE") != 0) {
 			n = read(sock, buf, NETTRANS);
 			line = getContent(buf);
+
 			if(line != NULL) {
-				printf("Got line: %s\n", line);
-				write(file, line, strlen(line));
+				lineLength = strlen(line);
+				if(*(line + lineLength - 1) == 1) {
+					lineLength -= 2;
+				}
+				//printf("Got line: %s\n", line);
+				write(file, line, lineLength);
 			}
 		}
-		endCommunication(fd);
 	} else {
+		printf("Could not create file\n");
 		write(fd, "Could not create file", NETTRANS);
-		endCommunication(fd);
 	}
+	endCommunication(fd);
 }
 
 int mypwd(char* path, int clientFD) {

@@ -115,9 +115,6 @@ int main(int argc, char *argv[])
 				close(newsock);
 				break;
 			}
-			
-			// show the line string
-			//printf("server: read	n=%d bytes; line=[%s]\n", n, line);
 
 			if(isCommand(line)) { //if command
 				readCommand(line);
@@ -125,7 +122,10 @@ int main(int argc, char *argv[])
 				char *pathname = getPath(line);
 				char *filename = getFilename(line);
 				
-				if(filename) {
+				if(strncmp(line, "::DONE", 6) == 0) {
+					//do nothing
+					//sometimes an error comes up that sends this
+				} else if(filename) {
 					transfer(filename, newsock);
 				} else {
 					int func = functionLookup(function);
@@ -141,11 +141,6 @@ int main(int argc, char *argv[])
 				printf("%c\n", line);
 			}
 
-			// send the echo line to client 
-			//n = write(newsock, line, MAX);
-			//n = write(newsock, line, MAX);
-
-			//printf("%s\n", line);
 			printf("server: ready for next request\n");
 		}
  	}
