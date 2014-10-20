@@ -140,3 +140,19 @@ int balloc(int dev) {
 	printf("balloc(): no more free inodes\n");
 	return 0;
 }
+
+//which deallocates an inode number, ino
+int idealloc(int dev, int ino) {
+	char buf[1024];
+	get_block(dev, imap, buf);
+	clr_bit(buf, ino);
+	put_block(dev, imap, buf);
+}
+
+//which deallocates an block number, bno
+int bdealloc(int dev, int bno) {
+	char buf[1024];
+	get_block(dev, bmap, buf);
+	clr_bit(buf, bno);
+	put_block(dev, bmap, buf);
+}
