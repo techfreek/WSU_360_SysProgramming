@@ -43,7 +43,7 @@ struct ext2_super_block {
 
 char buf[BLKSIZE];
 int fd;
-char *disk = "mydisk";
+char *disk = "fdimage";
 
 main(int argc, char *argv[]) { 
 	if (argc > 1) {
@@ -89,10 +89,10 @@ int super() {
 
 
 	printf("s_log_block_size = %d\n", sp->s_log_block_size);
-	printf("s_log_frag_size = %d\n", sp->s_log_frag_size);
+	//printf("s_log_frag_size = %d\n", sp->s_log_frag_size);
 
 	printf("s_blocks_per_group = %d\n", sp->s_blocks_per_group);
-	printf("s_frags_per_group = %d\n", sp->s_frags_per_group);
+	//printf("s_frags_per_group = %d\n", sp->s_frags_per_group);
 	printf("s_inodes_per_group = %d\n", sp->s_inodes_per_group);
 
 

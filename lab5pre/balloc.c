@@ -30,7 +30,7 @@ int fd;
 int imap, bmap;  // IMAP and BMAP block number
 int ninodes, blocks, nfreeInodes, nfreeBlocks;
 
-char *disk = "mydisk";
+char *disk = "fdimage";
 
 main(int argc, char *argv[]) {
 	int i, bno;
@@ -115,7 +115,7 @@ int updateFreeBlocks(int dev, int delta) {
 
 	get_block(dev, 2, buf);
 	gp = (GD *)buf;
-	gp->bg_blocks_inodes_count + delta;
+	gp->bg_free_blocks_count + delta;
 	put_block(dev, 2, buf);
 }
 

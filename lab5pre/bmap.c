@@ -22,7 +22,7 @@ DIR   *dp;
 char buf[BLKSIZE];
 int fd;
 
-char *disk = "mydisk";
+char *disk = "fdimage";
 
 main(int argc, char *argv[]) {
 	if (argc > 1) {
@@ -75,7 +75,7 @@ int bmap() {
 	// read bmap_bitmap block
 	get_block(fd, bmap, buf);
 
-	for (i=0; i < nnnodes; i++) {
+	for (i=0; i < blocks; i++) {
 		(tst_bit(buf, i)) ?	putchar('1') : putchar('0');
 		if ((i > 0) && !(i % 8)) {
 			printf(" ");

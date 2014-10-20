@@ -23,7 +23,7 @@ int gd();
 
 char buf[BLKSIZE];
 int fd;
-char *disk = "mydisk";
+char *disk = "fdimage";
 
 main(int argc, char *argv[]) { 
 	if (argc > 1) {

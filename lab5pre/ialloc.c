@@ -21,7 +21,7 @@ int fd;
 int imap, bmap;  // IMAP and BMAP block number
 int ninodes, nblocks, nfreeInodes, nfreeBlocks;
 
-char *disk = "mydisk";
+char *disk = "fdimage";
 
 main(int argc, char *argv[ ])
 {
