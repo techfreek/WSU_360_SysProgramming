@@ -15,11 +15,12 @@ int get_block(int fd, int blk, char buf[]) {
 }
 
 /* used to look up the block via the inode, currently it doesn't do anything */
-int get_ino_block(int fd, int ino, char buf[]) {
-	int blockNum = (ino - 1) / 8 /* + whatever the start block of the INOs is */;
+int get_inode(int fd, int ino, int startInoTable, INODE* node) {
+	char buf[BLKSIZE];
+	int blockNum = ((ino - 1) / 8) + startInoTable;
 	int block = (ino - 1) % 8;
 	get_block(fd, blockNum, buf);
-
+	node = (INODE*)buf[block * sizeof(INODE)]; //Skip past the nodes we don't need
 }
 
 void printSuper() {
@@ -172,5 +173,84 @@ int isStrEq(const char* str1, const char* str2) {
 		return 1;
 	} else {
 		return 0;
+	}
+}
+
+void printBlocks(INODE* file) {
+	int i = 0,
+		end = 0;
+	char buf[BLKSIZE];
+	
+
+	printf("Direct Blocks\n");
+	for(; i < 12 && file->i_block[i] != NULL; i++) {
+		printf("%d  ", file->i_block[i]);
+	}
+
+	//getchar();
+	if(file->i_block[12] != 0) {
+		printf("\n\nIndirect Blocks\n");
+		get_block(fd, i_block[12], buf);
+		printBlock(buf);
+	}
+
+	if(file->i_block[13] != 0) {
+		char dblIBuf[BLKSIZE];
+		int dblIBlock = 0;
+		printf("\n\nDouble Indirect Blocks\n");
+		get_block(fd, i_block[13], buf);
+
+		for(i = 0; i < (BLKSIZE / 4) && !end; i++) {
+			dblIBlock = (int)buf[i * 4];
+			if(dblIBlock > 0) {
+				get_block(fd, dblIBlock,  dblIBuf);
+				printBlock(dblIBuf);
+			} else {
+				end++;
+			}
+		}
+	}
+
+	if(file->i_block[14] != 0) {
+		end = 0;
+		int doubleEnd = 0;
+		int tripleIBlock = 0;
+		int j = 0;
+		char tripleIBuf[BLKSIZE];
+		printf("\n\nTriple Indirect Blocks\n");
+		get_block(fd, i_block[14], buf); //gets block containing references to blocks that have references to the actual blocks
+
+		for(i = 0; i < (BLKSIZE / 4) && !end; i++) {
+			dblIBlock = (int)buf[i * 4];
+			if(dblIBlock > 0) {
+				get_block(fd, dblIBlock,  dblIBuf);
+
+				for(j = 0; j < (BLKSIZE / 4) && !doubleEnd; j++) {
+					tripleIBlock = (int)dblIBuf[j * 4];
+					if(tripleIBlock > 0) {
+						get_block(fd, tripleIBlock, tripleIBuf);
+						printBlock(tripleIBuf);
+					} else {
+						doubleEnd++;
+					}
+				}
+				doubleEnd = 0;
+			} else {
+				end++;
+			}
+		}
+	}
+}
+
+void printBlock(char buf[]) {
+	int i = 0, end = 0, val = 0;
+	for (i = 0; i < (BLKSIZE / 4) && !end; i++)
+	{
+		val = (int)buf[(i * 4)];
+		if(val > 0) {
+			printf("%d  ", val);
+		} else {
+			end++;
+		}
 	}
 }
