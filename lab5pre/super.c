@@ -85,8 +85,8 @@ int super() {
 
 	printf("s_free_inodes_count = %d\n", sp->s_free_inodes_count);
 	printf("s_free_blocks_count = %d\n", sp->s_free_blocks_count);
-	printf("s_first_data_blcok = %d\n", sp->s_first_data_block);
-
+	printf("s_first_data_block = %d\n", sp->s_first_data_block);
+	printf("s_first_ino = %d\n", sp->s_first_ino);
 
 	printf("s_log_block_size = %d\n", sp->s_log_block_size);
 	//printf("s_log_frag_size = %d\n", sp->s_log_frag_size);
