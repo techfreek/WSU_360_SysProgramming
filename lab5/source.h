@@ -19,7 +19,7 @@ int get_inode(int fd, int ino, int startInoTable, INODE* node);
 void printSuper(int fd);
 int firstIBlock(int fd);
 int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino);
-int getIno(int fd, char *path);
+int getIno(int fd, int inoStart, char *path);
 int tokenize(char *path, char names[64][128]);
 int isStrEq(const char* str1, const char* str2);
 void printBlocks(int fd, INODE* file);
