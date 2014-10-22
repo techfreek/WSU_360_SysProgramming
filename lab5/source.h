@@ -1,3 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <ext2fs/ext2_fs.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 // define shorter TYPES, save typing efforts
 typedef struct ext2_group_desc  GD;
 typedef struct ext2_super_block SUPER;

@@ -23,8 +23,9 @@ int get_inode(int fd, int ino, int startInoTable, INODE* node) {
 	node = (INODE*)buf + block; //Skip past the nodes we don't need
 }
 
-void printSuper() {
+void printSuper(int fd) {
 	// read SUPER block
+	char buf[1024];
 	get_block(fd, 1, buf);  
 	sp = (SUPER *)buf;
 
@@ -64,7 +65,7 @@ int firstIBlock(int fd) {
 	get_block(fd, 2, buf);
 	gp = (GD *)buf;
 
-	iblock = gp->bg_inode_table;   // get inode start block#
+	int iblock = gp->bg_inode_table;   // get inode start block#
 	printf("inode_block=%d\n", iblock);
 
 	// get inode start block     
@@ -97,9 +98,9 @@ int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino
 	DIR   *dp; 
 	INODE *parent;
 	INODE *file;
-	get_inode(fd, ino, parent);
+	get_inode(fd, ino, inoStart, parent);
 	
-	get_block(fd, parent->i_block[0]), buf);
+	get_block(fd, parent->i_block[0], buf);
 	dp = (DIR *)buf;
 	cp = buf;
 
@@ -111,7 +112,7 @@ int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino
 		/*printf("Inode: %d, rec_len: %d, name_len: %d, name: %s \n", 
 			dp->inode, dp->rec_len, dp->name_len, temp);*/
 
-		match = isStrEq(names[0], temp)
+		match = isStrEq(names[0], temp);
 
 		if(match) {
 			get_inode(fd, dp->inode, inoStart, file);
@@ -196,7 +197,7 @@ void printBlocks(int fd, INODE* file) {
 	//getchar();
 	if(file->i_block[12] != 0) {
 		printf("\n\nIndirect Blocks\n");
-		get_block(fd, i_block[12], buf);
+		get_block(fd, file->i_block[12], buf);
 		printBlock(buf);
 	}
 
@@ -204,7 +205,7 @@ void printBlocks(int fd, INODE* file) {
 		char dblIBuf[BLKSIZE];
 		int dblIBlock = 0;
 		printf("\n\nDouble Indirect Blocks\n");
-		get_block(fd, i_block[13], buf);
+		get_block(fd, file->i_block[13], buf);
 
 		for(i = 0; i < (BLKSIZE / 4) && !end; i++) {
 			dblIBlock = (int)buf[i * 4];
@@ -219,12 +220,17 @@ void printBlocks(int fd, INODE* file) {
 
 	if(file->i_block[14] != 0) {
 		end = 0;
+
 		int doubleEnd = 0;
 		int tripleIBlock = 0;
+		int dblIBlock = 0;
 		int j = 0;
+
+		char dblIBuf[BLKSIZE];
 		char tripleIBuf[BLKSIZE];
+
 		printf("\n\nTriple Indirect Blocks\n");
-		get_block(fd, i_block[14], buf); //gets block containing references to blocks that have references to the actual blocks
+		get_block(fd, file->i_block[14], buf); //gets block containing references to blocks that have references to the actual blocks
 
 		for(i = 0; i < (BLKSIZE / 4) && !end; i++) {
 			dblIBlock = (int)buf[i * 4];
