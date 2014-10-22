@@ -15,11 +15,11 @@ DIR   *dp;
 
 int isEXT2(u32 magic);
 int get_block(int fd, int blk, char buf[]);
-int get_block(int fd, int blk, char buf[]);
 int get_inode(int fd, int ino, int startInoTable, INODE* node);
-void printSuper();
-int firstIBlock();
-int search(char names[64][128], int dirsRemaining, int ino);
-int getIno(char *path);
+void printSuper(int fd);
+int firstIBlock(int fd);
+int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino);
+int getIno(int fd, char *path);
 int tokenize(char *path, char names[64][128]);
 int isStrEq(const char* str1, const char* str2);
+void printBlocks(int fd, INODE* file);

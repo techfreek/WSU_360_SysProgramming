@@ -20,7 +20,7 @@ int get_inode(int fd, int ino, int startInoTable, INODE* node) {
 	int blockNum = ((ino - 1) / 8) + startInoTable;
 	int block = (ino - 1) % 8;
 	get_block(fd, blockNum, buf);
-	node = (INODE*)buf[block * sizeof(INODE)]; //Skip past the nodes we don't need
+	node = (INODE*)buf + block; //Skip past the nodes we don't need
 }
 
 void printSuper() {
@@ -56,7 +56,8 @@ void printSuper() {
 	printf("s_wtime = %s", ctime(&sp->s_wtime));
 }
 
-int firstIBlock() {
+/* gets first block of root */
+int firstIBlock(int fd) {
 	char buf[BLKSIZE];
 
 	// read GD
@@ -74,29 +75,31 @@ int firstIBlock() {
 	return ip->i_block[0];
 }
 
-int search(char names[64][128], int dirsRemaining, int ino) {
+int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino) {
 	/*
 		Logic:
-		[] Read block
+		[x] Read block
 		[x] Scans through each of the files in the block to see if's name matches
-			[] if it matches and is a file, and it's the file we are looking for
-				[] return it's ino
-			[] else its a match, but it's a file and it's not the file we are looking for (dirsRemaining == 0)
+			[x] if it matches and is a file, and it's the file we are looking for
+				[x] return it's ino
+			[x] else its a match, but it's a file and it's not the file we are looking for (dirsRemaining == 0)
 				[x] return 0
-			[] else if it's a directory and it's the next one on the path
-				[] return search(names+1, dirsRemaing - 1, ino of current dir)
+			[x] else if it's a directory and it's the next one on the path
+				[x] return search(names+1, dirsRemaing - 1, ino of current dir)
 			[x] //If we get out of the loop, the path is invalid
 				[x] return 0
 	*/
 
-	/* Read content of block */
-
 	char buf[BLKSIZE];
 	char temp[BLKSIZE];
 	char *cp;
-	INODE *ip;
-	DIR   *dp; 
 
+	DIR   *dp; 
+	INODE *parent;
+	INODE *file;
+	get_inode(fd, ino, parent);
+	
+	get_block(fd, parent->i_block[0]), buf);
 	dp = (DIR *)buf;
 	cp = buf;
 
@@ -110,13 +113,16 @@ int search(char names[64][128], int dirsRemaining, int ino) {
 
 		match = isStrEq(names[0], temp)
 
+		if(match) {
+			get_inode(fd, dp->inode, inoStart, file);
 
-		if(match && dirsRemaining == 0 && /* &&  is file */) {
-			return /* ino */;
-		} else if(match && dirsRemaining == 0 /* && not a file */) {
-			return 0;
-		} else if(match /* && is a directory */) {
-			return search(names + 1, dirsRemaining - 1, /* ino of current dir */);
+			if(dirsRemaining == 0 && S_ISREG(file->i_mode)) {
+				return dp->inode;
+			} else if(dirsRemaining == 0 && !S_ISREG(file->i_mode)) {
+				return 0;
+			} else if(S_ISDIR(file->i_mode)) {
+				return search(fd, inoStart, names + 1, dirsRemaining - 1, dp->inode);
+			}
 		}
 
 		cp += dp->rec_len;
@@ -128,7 +134,7 @@ int search(char names[64][128], int dirsRemaining, int ino) {
 
 }
 
-int getIno(char *path) {
+int getIno(int fd, int inoStart, char *path) {
 	/*
 		[x] Tokenize path 
 		[x] search
@@ -141,7 +147,7 @@ int getIno(char *path) {
 
 	numNames = tokenize(path, names);
 
-	targetINO = search(names, numNames, 2);
+	targetINO = search(fd, inoStart, names, numNames, 2);
 
 	return targetINO;
 }
@@ -176,7 +182,7 @@ int isStrEq(const char* str1, const char* str2) {
 	}
 }
 
-void printBlocks(INODE* file) {
+void printBlocks(int fd, INODE* file) {
 	int i = 0,
 		end = 0;
 	char buf[BLKSIZE];
