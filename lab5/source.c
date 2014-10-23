@@ -14,13 +14,13 @@ int get_block(int fd, int blk, char buf[]) {
 	read(fd, buf, BLKSIZE);
 }
 
-/* used to look up the block via the inode, currently it doesn't do anything */
-int get_inode(int fd, int ino, int startInoTable, INODE* node) {
+/* used to look up the block via the inode */
+INODE* get_inode(DEV *disk, int ino) {
 	char buf[BLKSIZE];
-	int blockNum = ((ino - 1) / 8) + startInoTable;
+	int blockNum = ((ino - 1) / 8) + disk->bg_inode_table;
 	int block = (ino - 1) % 8;
-	get_block(fd, blockNum, buf);
-	node = (INODE*)buf + block; //Skip past the nodes we don't need
+	get_block(disk->fd, blockNum, buf);
+	return (INODE*)buf + block; //Skip past the nodes we don't need
 }
 
 void printSuper(int fd) {
@@ -76,7 +76,7 @@ int firstIBlock(int fd) {
 	return ip->i_block[0];
 }
 
-int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino) {
+int search(DEV *disk, char names[64][128], int dirsRemaining, int ino) {
 	/*
 		Logic:
 		[x] Read block
@@ -95,12 +95,18 @@ int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino
 	char temp[BLKSIZE];
 	char *cp;
 
+	printf("\nSearching for %s, %d levels remain\n", names[0], dirsRemaining);
+
 	DIR   *dp; 
 	INODE *parent;
 	INODE *file;
-	get_inode(fd, ino, inoStart, parent);
+	parent = get_inode(disk, ino);
+	printf("Got parent INODE\n");
+	printInode(parent);
 	
-	get_block(fd, parent->i_block[0], buf);
+	get_block(disk->fd, parent->i_block[0], buf);
+	printf("Got parent's block\n");
+
 	dp = (DIR *)buf;
 	cp = buf;
 
@@ -109,20 +115,22 @@ int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino
 	while(cp < (buf + 1024)) {
 		strncpy(temp, dp->name, dp->name_len);
 		temp[dp->name_len] = '\0';
-		/*printf("Inode: %d, rec_len: %d, name_len: %d, name: %s \n", 
-			dp->inode, dp->rec_len, dp->name_len, temp);*/
+		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
+			temp, dp->inode, dp->rec_len, dp->name_len);
 
 		match = isStrEq(names[0], temp);
 
 		if(match) {
-			get_inode(fd, dp->inode, inoStart, file);
+			file = get_inode(disk, dp->inode);
 
 			if(dirsRemaining == 0 && S_ISREG(file->i_mode)) {
+				printf("Got file!\n");
 				return dp->inode;
 			} else if(dirsRemaining == 0 && !S_ISREG(file->i_mode)) {
 				return 0;
 			} else if(S_ISDIR(file->i_mode)) {
-				return search(fd, inoStart, names + 1, dirsRemaining - 1, dp->inode);
+				printf("Entering dir: %s\n", names[1]);
+				return search(disk, names + 1, dirsRemaining - 1, dp->inode);
 			}
 		}
 
@@ -135,7 +143,7 @@ int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino
 
 }
 
-int getIno(int fd, int inoStart, char *path) {
+int getIno(DEV *disk, char *path) {
 	/*
 		[x] Tokenize path 
 		[x] search
@@ -148,7 +156,9 @@ int getIno(int fd, int inoStart, char *path) {
 
 	numNames = tokenize(path, names);
 
-	targetINO = search(fd, inoStart, names, numNames, 2);
+	targetINO = search(disk, names, numNames - 1, 2);
+
+	printBlocks(disk->fd, get_inode(disk, targetINO));
 
 	return targetINO;
 }
@@ -161,17 +171,14 @@ int tokenize(char *path, char names[64][128]) {
 		return  0;
 	} else {
 		temp = strtok(path, "/");
-		printf("First token: %s\n", temp);
-
-		/* May need to be added if the first output is empty because it starts with /
-			temp = strtok(NULL, "/");
-		*/
 
 		while(temp != NULL) {
+			printf("Token[%d]: %s\n", i, temp);
 			strcpy(names[i++], temp);
 			temp = strtok(NULL, "/");
 		}
-		return i + 1; //returns total number of levels to traverse
+		printf("Length of tokenized path: %d\n", i);
+		return i; //returns total number of levels to traverse
 	}
 }
 
@@ -189,64 +196,44 @@ void printBlocks(int fd, INODE* file) {
 	char buf[BLKSIZE];
 	
 
-	printf("Direct Blocks\n");
-	for(; i < 12 && file->i_block[i] != NULL; i++) {
+	printf("\nDirect Blocks\n");
+	for(; i < 12 && file->i_block[i] != 0; i++) {
 		printf("%d  ", file->i_block[i]);
 	}
 
-	//getchar();
+	getchar();
 	if(file->i_block[12] != 0) {
-		printf("\n\nIndirect Blocks\n");
-		get_block(fd, file->i_block[12], buf);
-		printBlock(buf);
+		printf("\nIndirect Blocks\n");
+		nIndirect(fd, file->i_block[12], 1);
 	}
 
+
+	getchar();
 	if(file->i_block[13] != 0) {
-		char dblIBuf[BLKSIZE];
-		int dblIBlock = 0;
-		printf("\n\nDouble Indirect Blocks\n");
-		get_block(fd, file->i_block[13], buf);
-
-		for(i = 0; i < (BLKSIZE / 4) && !end; i++) {
-			dblIBlock = (int)buf[i * 4];
-			if(dblIBlock > 0) {
-				get_block(fd, dblIBlock,  dblIBuf);
-				printBlock(dblIBuf);
-			} else {
-				end++;
-			}
-		}
+		printf("\nDouble Indirect Blocks\n");
+		nIndirect(fd, file->i_block[13], 2);
 	}
 
+	getchar();
 	if(file->i_block[14] != 0) {
-		end = 0;
+		printf("\nTriple Indirect Blocks\n");
+		nIndirect(fd, file->i_block[14], 3);
+	}
+	printf("\nEnd of file blocks\n\n");
+}
 
-		int doubleEnd = 0;
-		int tripleIBlock = 0;
-		int dblIBlock = 0;
-		int j = 0;
+void nIndirect(int fd, int blockNum, int n) {
+	char buf[1024];
+	int val = 0, i = 0, end = 0;
 
-		char dblIBuf[BLKSIZE];
-		char tripleIBuf[BLKSIZE];
-
-		printf("\n\nTriple Indirect Blocks\n");
-		get_block(fd, file->i_block[14], buf); //gets block containing references to blocks that have references to the actual blocks
-
+	get_block(fd, blockNum, buf);
+	if(n <= 1) {
+		printBlock(buf);
+	} else {
 		for(i = 0; i < (BLKSIZE / 4) && !end; i++) {
-			dblIBlock = (int)buf[i * 4];
-			if(dblIBlock > 0) {
-				get_block(fd, dblIBlock,  dblIBuf);
-
-				for(j = 0; j < (BLKSIZE / 4) && !doubleEnd; j++) {
-					tripleIBlock = (int)dblIBuf[j * 4];
-					if(tripleIBlock > 0) {
-						get_block(fd, tripleIBlock, tripleIBuf);
-						printBlock(tripleIBuf);
-					} else {
-						doubleEnd++;
-					}
-				}
-				doubleEnd = 0;
+			val = (int)buf[(i * 4)];
+			if(val > 0) {
+				nIndirect(fd, val, n - 1);
 			} else {
 				end++;
 			}
@@ -265,4 +252,13 @@ void printBlock(char buf[]) {
 			end++;
 		}
 	}
+}
+
+void printInode(INODE *ip) {
+	printf("\n=======Inode Stats=======\n");
+
+	printf("Mode: %d, uid: %d, size: %d\n", ip->i_mode, ip->i_uid, ip->i_size);
+	printf("gid: %d, links: %d, blocks: %d\n", ip->i_gid, ip->i_links_count, ip->i_blocks);
+
+	printf("\n=========================\n");
 }

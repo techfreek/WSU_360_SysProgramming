@@ -14,6 +14,17 @@ typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 typedef unsigned int   u32;
 typedef struct DIR* SHUTUP; //tell the compiler to shut up
 
+typedef struct dev {
+	int fd;
+	int imap;
+	int bmap;  // IMAP and BMAP block number
+	int ninodes;
+	int blocks;
+	int nfreeInodes;
+	int nfreeBlocks;
+	int bg_inode_table;
+} DEV;
+
 #define BLKSIZE 1024
 
 GD    *gp;
@@ -23,11 +34,11 @@ DIR   *dp;
 
 int isEXT2(u32 magic);
 int get_block(int fd, int blk, char buf[]);
-int get_inode(int fd, int ino, int startInoTable, INODE* node);
+INODE* get_inode(DEV *disk, int ino);
 void printSuper(int fd);
 int firstIBlock(int fd);
-int search(int fd, int inoStart, char names[64][128], int dirsRemaining, int ino);
-int getIno(int fd, int inoStart, char *path);
+int search(DEV *disk, char names[64][128], int dirsRemaining, int ino);
+int getIno(DEV *disk, char *path);
 int tokenize(char *path, char names[64][128]);
 int isStrEq(const char* str1, const char* str2);
 void printBlocks(int fd, INODE* file);
