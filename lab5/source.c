@@ -201,21 +201,21 @@ void printBlocks(int fd, INODE* file) {
 		printf("%d  ", file->i_block[i]);
 	}
 
-	getchar();
 	if(file->i_block[12] != 0) {
+		getchar();
 		printf("\nIndirect Blocks\n");
 		nIndirect(fd, file->i_block[12], 1);
 	}
 
 
-	getchar();
 	if(file->i_block[13] != 0) {
+		getchar();
 		printf("\nDouble Indirect Blocks\n");
 		nIndirect(fd, file->i_block[13], 2);
 	}
 
-	getchar();
 	if(file->i_block[14] != 0) {
+		getchar();
 		printf("\nTriple Indirect Blocks\n");
 		nIndirect(fd, file->i_block[14], 3);
 	}
@@ -248,6 +248,7 @@ void printBlock(char buf[]) {
 		val = (int)buf[(i * 4)];
 		if(val > 0) {
 			printf("%d  ", val);
+			if(i > 0 && !(i % 18)) {printf("\n");}
 		} else {
 			end++;
 		}
@@ -258,7 +259,7 @@ void printInode(INODE *ip) {
 	printf("\n=======Inode Stats=======\n");
 
 	printf("Mode: %d, uid: %d, size: %d\n", ip->i_mode, ip->i_uid, ip->i_size);
-	printf("gid: %d, links: %d, blocks: %d\n", ip->i_gid, ip->i_links_count, ip->i_blocks);
+	printf("gid: %d, links: %d, blocks: %d", ip->i_gid, ip->i_links_count, ip->i_blocks);
 
-	printf("\n=========================\n");
+	printf("\n=========================\n\n");
 }
