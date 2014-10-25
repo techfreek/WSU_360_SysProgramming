@@ -151,12 +151,16 @@ int getIno(DEV *disk, char *path) {
 	*/
 	char names[64][128];
 	int numNames, rootDirBlock, targetINO = 0;
-
+	INODE* file;
 	//rootDirBlock = 	firstIBlock();
 
 	numNames = tokenize(path, names);
 
 	targetINO = search(disk, names, numNames - 1, 2);
+
+	file = getInode(disk, targetINO);
+
+//Print inode stats
 
 	printBlocks(disk->fd, get_inode(disk, targetINO));
 
