@@ -65,9 +65,7 @@ int firstIBlock(int fd) {
 	get_block(fd, 2, buf);
 	gp = (GD *)buf;
 
-	int iblock = gp->bg_inode_table;   // get inode start block#
-	printf("inode_block=%d\n", iblock);
-
+	int iblock = gp->bg_inode_table;   // get inode start block
 	// get inode start block     
 	get_block(fd, iblock, buf);
 
