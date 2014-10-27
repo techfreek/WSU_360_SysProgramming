@@ -13,6 +13,7 @@
 #include "types.h"
 
 int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64]);
+int unMountDisk(int disk);
 int getFD(int disk);
 MINODE* getMountedInode(int disk);
 char* getName(int disk);
