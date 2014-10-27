@@ -57,6 +57,7 @@ typedef struct oft{
 
 // PROC structure
 typedef struct proc{
+	struct proc *next;
 	int   uid;
 	int   pid, gid;
 	int   status;
