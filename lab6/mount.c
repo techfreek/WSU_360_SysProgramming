@@ -1,33 +1,6 @@
 #include "mount.h"
 
-MOUNT* mounttable[NMOUNT];
-
-int init() {
-	MOUNT* newDisk;
-
-	for(int i = 0; i < NMOUNT; i++) {
-		mounttable = NULL;
-		/*newDisk = (MOUNT *)malloc(sizeof(MOUNT));		
-		if(newDisk == NULL) {
-			return 0; //Couldn't allocate, so we give up
-		}
-		
-
-		/* sets all fields to empty */
-		newDisk->dev = 0;
-		newDisk->nblocks = 0;
-		newDisk->ninodes = 0;
-		newDisk->bmap = 0;
-		newDisk->imap = 0;
-		newDisk->iblk = 0;
-		newDisk->mounted_inode = NULL;
-		newDisk->name[0] = 0;
-		newDisk->mount_name[0] = 0;
-		
-		mounttable[i] = newDisk;*/
-	}
-	return 1;
-}
+MOUNT* mounttable[NMOUNT] = { NULL };
 
 int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64]) {
 	//Find first empty slot
@@ -50,7 +23,7 @@ int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64])
 	sp = (SUPER *)buf;
 	if(!isEXT2(sp->s_magic)) {
 		printf("Not an EXT2 file system\n");
-		return 0;
+		exit(0); //Just give up while you're ahead
 	}
 
 	mounttable[i]->ninodes = sp->s_inodes_count;
@@ -69,7 +42,10 @@ int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64])
 }
 
 int unMountDisk(int disk) {
-	/* Work on this more, for right now, it will just clear it from memory and nothing more */
+	/* Work on this more, for right now, it will just clear it from memory and nothing more
+		I should have it verify that it is a valid disk
+		Then have it go and clean up any associated files on the minode table
+	 */
 	//MOUNT* unmount = mounttable[disk - 1];
 	free(mounttable[disk-1]->mounted_inode); //frees data held by the inode
 	free(mounttable[disk-1]); //frees the memory held by the mount struct
@@ -78,7 +54,16 @@ int unMountDisk(int disk) {
 
 int getFD(int disk) {
 	return mounttable[disk - 1]->dev;
+}
 
+int getDevID(int fd) { //In case we lost the devId but have the fd
+	int i = 0;
+	for(; i < NMOUNT; i++) {
+		if(mounttable[i]->dev == fd) {
+			return i + 1;
+		}
+	}
+	return 0;
 }
 
 MINODE* getMountedInode(int disk) {
@@ -111,4 +96,28 @@ int getIMap(int disk) {
 
 int getIBlk(int disk) {
 	return mounttable[disk - 1]->iblk;
+}
+
+MOUNT* getMountPtr(int disk) {
+	return mounttable[disk -1];
+}
+
+void printMount(int disk) {
+	MOUNT *dp = mounttable[disk-1];
+	printMountPtr(dp);
+}
+
+void printMountPtr(MOUNT* dp) {
+	printf("\n@@@@@@@@@@ Mount Stats @@@@@@@@@@\n");
+	printf("Name: %s", dp->name);
+	printf("Mount Name: %s\n", dp->mount_name);
+
+	printf("Device | nBlocks | nInodes | bmap | imap | iblk\n");
+	printf("%6d | %7d | %7d | %4d | %4d | %4d | %4d \n", dp->dev, 
+			dp->nBlocks, dp->nInodes, dp->bmap, dp->imap, dp->iblk);
+	printf("-----------------------------------------------\n");
+	
+	//printMINode(dp->mounted_inode);
+
+	printf("@@@@@@@@@@  End Mount  @@@@@@@@@@\n\n");
 }

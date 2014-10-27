@@ -3,11 +3,10 @@
 
 #include "types.h"
 
-
-void init();
-MINODE *iget(int dev, int ino);
+MINODE *iget(int devId, int ino);
 int iput(MINODE *mip);
 int findmyname(MINODE *parent, int myino, char *myname);
 int findino(MINODE *mip, int *myino, *parentino);
+void printMINode(MINODE *mip);
 
 #endif

@@ -15,6 +15,7 @@ typedef struct ext2_group_desc  GD;
 typedef struct ext2_super_block SUPER;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
+typedef struct DIR* SHUTUP; //tell the compiler to shut up
 
 GD    *gp;
 SUPER *sp;
@@ -48,39 +49,39 @@ DIR   *dp;
 
 // Open File Table
 typedef struct oft{
-  int   mode;
-  int   refCount;
-  struct minode *inodeptr;
-  int   offset;
+	int   mode;
+	int   refCount;
+	struct minode *inodeptr;
+	int   offset;
 }OFT;
 
 // PROC structure
 typedef struct proc{
-  int   uid;
-  int   pid, gid;
-  int   status;
-  struct minode *cwd;
-  OFT   *fd[NFD];
+	int   uid;
+	int   pid, gid;
+	int   status;
+	struct minode *cwd;
+	OFT   *fd[NFD];
 }PROC;
-      
+
 // In-memory inodes structure
 typedef struct minode{		
-  INODE INODE;               // disk inode
-  int   dev, ino;
-  int   refCount;
-  int   dirty;
-  int   mounted;
-  struct mount *mountptr;
+	INODE INODE;               // disk inode
+	int   dev, ino;
+	int   refCount;
+	int   dirty;
+	int   mounted;
+	struct mount *mountptr;
 }MINODE;
 
 // Mount Table structure
 typedef struct mount{
-        int    dev;
-        int    nblocks,ninodes;
-        int    bmap, imap, iblk;
-        MINODE *mounted_inode;
-        char   name[64]; 
-        char   mount_name[64];
+	int    dev;
+	int    nblocks,ninodes;
+	int    bmap, imap, iblk;
+	MINODE *mounted_inode;
+	char   name[64]; 
+	char   mount_name[64];
 }MOUNT;
 
 #endif
