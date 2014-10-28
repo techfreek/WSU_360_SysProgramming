@@ -10,6 +10,8 @@ int ls(char *pathname) {
 		list_dir(mip);
 
 	iput(mip);*/
+	
+
 }
 
 int list_file(MINODE* mip, char* name) {

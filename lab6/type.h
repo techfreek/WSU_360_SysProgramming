@@ -62,6 +62,7 @@ typedef struct proc{
 	int   pid, gid;
 	int   status;
 	struct minode *cwd;
+	int cwdDevId; store the devId of the current directory
 	OFT   *fd[NFD];
 }PROC;
 

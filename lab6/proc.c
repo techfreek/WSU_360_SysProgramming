@@ -1,9 +1,9 @@
 #include "proc.h"
 
-PROC *running = NULL;
+//PROC *running = NULL; //move to an global variable
 int numProcesses = 0;
 
-int newProc(int uid) {
+PROC*  newProc(int uid) {
 	PROC *process = (PROC*)malloc(sizeof(PROC));
 	if(process == NULL) {
 		return 0;
@@ -15,7 +15,10 @@ int newProc(int uid) {
 	process->gid = 0;
 	process->status = READY
 	process->cwd = NULL;
-	process->fd = NULL;
+
+	OFT files[NFD] = {NULL};
+
+	process->fd = files;
 
 	if(running == NULL) {
 		process->next = process;
@@ -26,7 +29,7 @@ int newProc(int uid) {
 		running->next = process; //insert the new PROC right after the current running process
 	}
 	
-	return 1;
+	return process;
 }
 
 int removeProc(int uid) {

@@ -7,6 +7,23 @@ int fs_init() {
 		(3). MINODE minode[100]; all with refCount=0, devId=0, ino=0
 		(5). MINODE *root = 0;
 	*/
+
+	PROC *P0 = newProc(0);
+	PROC *P1 = newProc(1);
+
+	initMINODE();
+	
+	int rootDiskFD = open(/* filepath */, O_READ);
+
+	if(!rootDiskFD) { 
+		printf("Could not open the specied disk: %s", path);
+		exit(1);
+	}
+
+	int rootID = mountDisk(rootDiskFD, NULL, NULL, NULL); // Nulls are temporary until I learn what these fields are for
+
+	root = iget(rootDiskFD, 2);
+	return rootDiskFD);
 }
 
 int mount_root() {

@@ -12,7 +12,7 @@ MINODE* minodes[NMINODES];
 
 
 //ensures all are zero to start
-void init() {
+void initMINODE() {
 	for(int i = 0; i < NMINODES; i++) {
 		minodes[i]->INODE = (INODE)NULL;
 		minodes[i]->dev = 0;
