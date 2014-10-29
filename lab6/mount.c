@@ -4,9 +4,10 @@ MOUNT* mounttable[NMOUNT] = { NULL };
 
 int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64]) {
 	//Find first empty slot
-	int i = 0;
+	int i = 0;	
 	for(; i < NMOUNT && mounttable[i] != NULL; i++);
-	
+	printf("First empty mount slot = %d\n", i);
+
 	//Opens disk, and stores the field in the first open slot
 	char buf[BLKSIZE];
 	SUPER *sp = NULL;
@@ -16,10 +17,17 @@ int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64])
 
 	mounttable[i]->dev = fd; //store the file descriptor
 	mounttable[i]->mounted_inode = mounted_inode; /* i need to look up where I get this field from */
-	strncpy(mounttable[i]->name, name, NNAME);
-	strncpy(mounttable[i]->mount_name, mount_name, NNAME);
+	if(name != NULL) {
+		strncpy(mounttable[i]->name, name, NNAME);
+	} 
 
-	get_block(fd, 1, buf);
+	if(mount_name != NULL) {
+		strncpy(mounttable[i]->mount_name, mount_name, NNAME);
+	}
+
+	printf("Reading SUPER block\n");
+
+	get_block(i+1, 1, buf); //we use the index of the mount for this
 	sp = (SUPER *)buf;
 	if(!isEXT2(sp->s_magic)) {
 		printf("Not an EXT2 file system\n");
@@ -29,13 +37,15 @@ int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64])
 	mounttable[i]->ninodes = sp->s_inodes_count;
 	mounttable[i]->nblocks = sp->s_blocks_count;
 	
-
-	get_block(fd, 2, buf);
+	printf("Reading GD block\n");
+	get_block(i+1, 2, buf);
 	gp = (GD *)buf;
 	
 	mounttable[i]->bmap = gp->bg_block_bitmap;
 	mounttable[i]->imap = gp->bg_inode_bitmap;
 	mounttable[i]->iblk = gp->bg_inode_table;
+
+	printf("Disk mounted\n");
 
 	//returns index + 1
 	return i + 1;
@@ -53,7 +63,7 @@ int unMountDisk(int disk) {
 }
 
 int unmountAll() {
-printf("Unmount all not implemented yet\n");
+	printf("Unmount all not implemented yet\n");
 }
 
 int getFD(int disk) {

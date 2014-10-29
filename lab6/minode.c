@@ -1,5 +1,5 @@
 #include "minode.h"
-MINODE* minodes[NMINODES];
+MINODE* minodes[NMINODES] = {NULL};
 
 extern PROC *running;
 MINODE *root = NULL;
@@ -8,6 +8,8 @@ MINODE *root = NULL;
 void initMINODE() {
 	int i;
 	for(i = 0; i < NMINODES; i++) {
+		MINODE *newMINODE = (MINODE*)malloc(sizeof(MINODE));
+		minodes[i] = newMINODE;
 		//minodes[i]->INODE = NULL;
 		minodes[i]->dev = 0;
 		minodes[i]->ino = 0;
@@ -32,31 +34,41 @@ MINODE *iget(int devId, int ino) {
 		other fields and return its address as a MINODE pointer,
 	*/
 
-	int i = 0, firstOpenSlot = 1;
+	printf("Getting ino = %d on disk = %d\n", ino, devId);
+
+	int i = 0, firstOpenSlot = -1;
 	for(i = 0; i < NMINODES; i++) {
 		if(minodes[i]->ino == ino) { //File is already loaded
+			printf("MINODE found!\n");
 			break;
 		}
 		if(minodes[i]->ino == 0 && (firstOpenSlot < 0)) { //If we haven't found an open slot, and it's open, store the index
 			firstOpenSlot = i;
+			printf("First open MINODE slot: %d\n", firstOpenSlot);
 		}
 	}
 
-	if(i >= NMINODES) { //we searched the entire array
+	printf("i = %d\n", i);
+
+	if(i == NMINODES) { //we searched the entire array
+		printf("Ino = %d was not found in minode table\n", ino);
 		char buf[BLKSIZE];
 		INODE *ip;
+		printf("Getting inode for ino %d\n", ino);
 		ip = get_inode(devId, ino);
 		MINODE* mip = minodes[firstOpenSlot];
 		mip->INODE = *ip; //Copy over IP content
 		mip->dev = getFD(devId);
-		mip->refCount = 0;
+		mip->refCount = 1;
 		mip->ino = ino;
 		mip->dirty = 0;
+		printf("Getting mount pointer for disk %d\n", devId);
 		mip->mountptr = getMountPtr(devId);
 		return mip;
 	} else { //File is already on there
-		minodes[i]->refCount++;
-		printf("%d users are currently connected to: %d\n", minodes[i]->refCount, minodes[i]->ino);
+		printf("%d users are currently connected to: %d\n", minodes[i]->refCount++, minodes[i]->ino);
+		//minodes[i]->refCount++;
+		
 		return minodes[i];
 	}
 }
@@ -121,11 +133,11 @@ int findino(MINODE *mip, int myino, int parentino) {
 
 void printMINode(MINODE *mip) {
 	printf("\n########## MINODE Stats ##########\n");
-	printInode(&mip->INODE);
 	printf("Dev |  ino  | refCount | dirty | mounted \n");
 	printf("%3d | %5d | %8d | %5d | %d\n", mip->dev, mip->ino, mip->refCount, mip->dirty, mip->mounted);
+	printInode(&mip->INODE);
 
-	printf("##########  End MINODE  ##########\n\n");
+	printf("\n##########  End MINODE  ##########\n\n");
 }
 
 void printAllMINodes() {
@@ -139,7 +151,7 @@ void printAllMINodes() {
 			printf("%3d |%3d | %5d | %8d | %5d | %d\n", curr->dev, curr->ino, curr->refCount, curr->dirty, curr->mounted);
 		}
 	}
-	printf("##########  End MINODEs  ##########\n\n");
+	printf("\n##########  End MINODEs  ##########\n\n");
 }
 
 

@@ -90,4 +90,35 @@ typedef struct mount{
 	char   mount_name[NNAME];
 }MOUNT;
 
+/*
+	struct ext2_inode {
+		//*************************************************************************
+		u16  i_mode;          // same as st_mode in stat() syscall
+		u16  i_uid;                     // ownerID
+		u32  i_size;                    // file size in bytes
+		u32  i_atime;                   // time fields  
+		u32  i_ctime;
+		u32  i_mtime;
+		u32  i_dtime;
+		u16  i_gid;                     // groupID
+		u16  i_links_count;             // link count
+		u32  i_blocks;                  // IGNORE
+		u32  i_flags;                   // IGNORE
+		u32  i_reserved1;               // IGNORE
+		u32  i_block[15];               // See details below
+		//**************************************************************************
+
+		// IGNORE THE FOLLOWING FIELDS
+		u32  i_version;
+		u32  i_file_acl;
+		u32  i_dir_acl;
+		u32  i_faddr;
+		u8   i_frag;
+		u8   i_fsize;
+		u16  i_pad1;
+		u32  i_reserved2[2];
+	}
+
+*/
+
 #endif

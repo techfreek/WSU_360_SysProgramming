@@ -13,8 +13,27 @@ int ls(char *pathname) {
 		list_dir(mip);
 
 	iput(mip);*/
-	
+	int devId = running->cwdDevId;
+	int ino;
+	MINODE *mip;
 
+	printf("LSing path: %s\n", pathname);
+	if(strlen(pathname)) { //if a path is provided
+		ino = getino(devId, pathname);	
+		mip = iget(devId, ino);
+	} else {
+		ino = running->cwd->ino;
+		mip = running->cwd;
+	}
+	
+	if(S_ISREG(mip->INODE.i_mode)) {
+		printf("Listing file\n");
+		list_file(mip, bbasename(pathname));
+	} else {
+		list_dir(mip);
+	}
+
+	iput(mip); //close file
 }
 
 int list_file(MINODE* mip, char* name) {
@@ -30,33 +49,33 @@ int list_file(MINODE* mip, char* name) {
 	INODE *ip = &mip->INODE;
 	//File type
 	if(S_ISREG(ip->i_mode)) {
-		putchar('-');
+		printf("-");
 	} else if(S_ISDIR(ip->i_mode)) {
-		putchar('d');
+		printf("d");
 	} else if(S_ISLNK(ip->i_mode)) {
-		putchar('l');
+		printf("l");
 	}
 
 	//Owner Privileges
-	(S_IRUSR & ip->i_mode) ? putchar('r') : putchar('-');
-	(S_IWUSR & ip->i_mode) ? putchar('w') : putchar('-');
-	(S_IXUSR & ip->i_mode) ? putchar('x') : putchar('-');
+	(S_IRUSR & ip->i_mode) ? printf("r") : printf("-");
+	(S_IWUSR & ip->i_mode) ? printf("w") : printf("-");
+	(S_IXUSR & ip->i_mode) ? printf("x") : printf("-");
 
 	//Group Privileges
-	(S_IRGRP & ip->i_mode) ? putchar('r') : putchar('-');
-	(S_IWGRP & ip->i_mode) ? putchar('w') : putchar('-');
-	(S_IXGRP & ip->i_mode) ? putchar('x') : putchar('-');
+	(S_IRGRP & ip->i_mode) ? printf("r") : printf("-");
+	(S_IWGRP & ip->i_mode) ? printf("w") : printf("-");
+	(S_IXGRP & ip->i_mode) ? printf("x") : printf("-");
 
 	//Other Privileges
-	(S_IROTH & ip->i_mode) ? putchar('r') : putchar('-');
-	(S_IWOTH & ip->i_mode) ? putchar('w') : putchar('-');
-	(S_IXOTH & ip->i_mode) ? putchar('x') : putchar('-');
+	(S_IROTH & ip->i_mode) ? printf("r") : printf("-");
+	(S_IWOTH & ip->i_mode) ? printf("w") : printf("-");
+	(S_IXOTH & ip->i_mode) ? printf("x") : printf("-");
 
 	printf("%3s %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, ctime(&ip->i_ctime), name);
 	if(S_ISLNK(ip->i_mode)) {
 		printf(" -> %s\n", (char *)ip->i_block);
 	} else {
-		putchar('\n');
+		printf("\n");
 	}
 }
 
@@ -87,6 +106,11 @@ int list_dir(MINODE* mip) {
 		while(cp < (buf + 1024)) {
 			getDIRFileName(dp, name);
 			printf("%d %d %d %s\n", dp->inode, dp->rec_len, dp->name_len, name);
+			MINODE *mip = iget(devId, dp->inode);
+			if(S_ISREG(mip->INODE.i_mode)) {
+				list_file(mip, name);
+			}
+			iput(mip); //relase hold
 			cp += dp->rec_len;
 			dp = (SHUTUP)cp;
 		}
@@ -109,16 +133,46 @@ int cd(char* pathname) {
 		iput(running PROC's cwd);
 		set running PROC's cwd to mip;
 	 }*/
+	if(!strlen(pathname)) {
+		iput(running->cwd); //close file (don't leave it open for nothing)
+		running->cwd = root;
+	} else {
+		int devId = running->cwdDevId;
+		int ino = getino(devId, pathname);
+		MINODE* mip = iget(devId, ino);
+
+		if(S_ISDIR(mip->INODE.i_mode)) {
+			iput(running->cwd); //close file (don't leave it open for nothing)
+			running->cwd = mip;
+		} else {
+			printf("Specified path is invalid\n");
+		}
+
+	}
 }
 
 void pwd() {
 	//print the pathname of running PROC's CWD
+	rpwd(running->cwd);
+	printf("\n");
 }
 
-void rpwd() {
+MINODE* rpwd(MINODE *mip) {
 	//recursive step of pwd
 	//if root, return
 	//then on return, print '/' then filename
+	if(mip == root) {
+		return mip; //return parent
+	} else {
+		MINODE* parent = rpwd(mip);
+		char* name = (char*)malloc(sizeof(char) * NNAME);
+
+		findmyname(parent, mip->ino, name);
+
+		printf("/%s", name);
+		free(name);
+		return mip;
+	}
 }
 
 

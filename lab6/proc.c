@@ -60,17 +60,16 @@ void printAllProcs() {
 
 		printf("Open files: \n");
 		printf("i |  mode  | refCount | offset \n");
-		printf("--------------------------------------------\n");
+		printf("-------------------------------\n");
 		for(i = 0; i < NFD; i++) {
 			if(curr->fd[i] != NULL) {
 				printf("%d | %6d | %8d | %d\n", i, 
 					curr->fd[i]->mode, curr->fd[i]->refCount, /*curr->fd[i]->inodeptr->ino,*/ curr->fd[i]->offset);
-				printf("--------------------------------------------\n");
 			}
 		}
 
-	printf("------------------------------------------------------\n");
-
-	} while (curr != start);
+		printf("-------------------------------\n");
+		curr = curr->next;
+	} while ((curr != NULL) && (curr != start));
 	printf("%%%%%%%%%%  PROCS %%%%%%%%%%\n\n");
 }

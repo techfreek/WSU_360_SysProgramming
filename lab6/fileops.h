@@ -8,7 +8,7 @@ int list_file(MINODE* mip, char* name);
 int list_dir(MINODE* mip);
 int cd(char* pathname);
 void pwd();
-void rpwd();
+MINODE* rpwd(MINODE *mip);
 //STAT* stat();
 
 #endif

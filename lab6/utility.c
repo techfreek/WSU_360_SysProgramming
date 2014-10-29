@@ -11,14 +11,16 @@ int fs_init(char* pathname) {
 		(5). MINODE *root = 0;
 	*/
 
-	initMINODE();
-	
+	printf("Opening the disk for O_RDWR\n");
 	int rootDiskFD = open(pathname, O_RDWR);
 
 	if(!rootDiskFD) { 
 		printf("Could not open the specied disk: %s", pathname);
 		exit(1);
 	}
+
+	printf("Initializing Minode Table...\n");
+	initMINODE();
 
 	mount_root(rootDiskFD);
 
@@ -35,14 +37,20 @@ int mount_root(int fd) {
 			P0.cwd = iget(devId, 2); 
 			P1.cwd = iget(devId, 2);
     */
-
+	printf("Creating inital procs\n");
 	PROC *P0 = newProc(0);
 	PROC *P1 = newProc(1);
 
+	printf("Mounting root...\n");
 	int rootID = mountDisk(fd, NULL, NULL, NULL); // Nulls are temporary until I learn what these fields are for
 	root = iget(rootID, 2);
+
+	printf("Initializing P0 CWD\n");
 	P0->cwd = iget(rootID, 2);
+
+	printf("Initializing P1 CWD\n");
 	P1->cwd = iget(rootID, 2);
+
 	printAllProcs();
 
 }
@@ -68,11 +76,11 @@ void put_block(int devId, int blk, char buf[]) {
 
 /* used to look up the block via the inode */
 INODE* get_inode(int devId, int ino) {
-	char buf[100];
+	char buf[BLKSIZE];
 	int blockNum = ((ino - 1) / 8) + getIBlk(devId);
 	int block = (ino - 1) % 8;
-	get_block(getFD(devId), blockNum, buf);
-	return (INODE*)buf + block; //Skip past the nodes we don't need
+	get_block(devId, blockNum, buf);
+	return (INODE*)buf + block;//Skip past the nodes we don't need
 }
 
 int tokenize(char *path, char names[64][128]) {
@@ -354,8 +362,8 @@ int updateFreeBlocks(int devId, int delta) {
 void printInode(INODE* ip) {
 	printf("\n********** INODE Stats **********\n");
 	
-	printf("I_Mode  |  uid  |  size  |   atime   |  gid  |  links  \n");
-	printf("%8d| %5d | %6d | %9d | %5d | %d\n", ip->i_mode, ip->i_uid, ip->i_size, ip->i_atime, ip->i_gid, ip->i_links_count);
+	printf("I_Mode  |  uid  |  size  |     atime     |  gid  |  links  \n");
+	printf("%8d| %5d | %6d | %13d | %5d | %d\n", ip->i_mode, ip->i_uid, ip->i_size, ip->i_atime, ip->i_gid, ip->i_links_count);
 
 	printf("**********  End INODE  **********\n\n");
 }
