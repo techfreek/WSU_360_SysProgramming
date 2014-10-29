@@ -1,9 +1,11 @@
 #include "proc.h"
 
-//PROC *running = NULL; //move to an global variable
+PROC *running = NULL; //move to an global variable
+extern MINODE *root;
+
 int numProcesses = 0;
 
-PROC*  newProc(int uid) {
+PROC* newProc(int uid) {
 	PROC *process = (PROC*)malloc(sizeof(PROC));
 	if(process == NULL) {
 		return 0;
@@ -13,12 +15,12 @@ PROC*  newProc(int uid) {
 	process->uid = uid;
 	process->pid = numProcesses++; //auto increment
 	process->gid = 0;
-	process->status = READY
+	process->status = READY;
 	process->cwd = NULL;
 
 	OFT files[NFD] = {NULL};
 
-	process->fd = files;
+	*process->fd = files;
 
 	if(running == NULL) {
 		process->next = process;
@@ -37,4 +39,38 @@ int removeProc(int uid) {
 	//Use a trailing pointer (always 1 node behind the current PROC)
 	//when the uid is found, set the next pointer to the next pointer of the current PROC
 	//check to see if there is only proc. If so, set running to 0
+}
+
+void killAllProcs() {
+
+}
+
+void printAllProcs() {
+	PROC *start = running;
+	PROC *curr = running;
+	int i = 0;
+
+	printf("\n%%%%%%%%%% Procs %%%%%%%%%%\n");
+	do {
+		printf("UID | PID | GID | STATUS | devID \n");
+		printf("%3d | %3d | %3d | %6d | %d", curr->uid, curr->pid, curr->gid, curr->status, curr->cwdDevId);
+
+		printf("CWD: \n");
+		printMINode(curr->cwd);
+
+		printf("Open files: \n");
+		printf("i |  mode  | refCount | offset \n");
+		printf("--------------------------------------------\n");
+		for(i = 0; i < NFD; i++) {
+			if(curr->fd[i] != NULL) {
+				printf("%d | %6d | %8d | %d\n", i, 
+					curr->fd[i]->mode, curr->fd[i]->refCount, /*curr->fd[i]->inodeptr->ino,*/ curr->fd[i]->offset);
+				printf("--------------------------------------------\n");
+			}
+		}
+
+	printf("------------------------------------------------------\n");
+
+	} while (curr != start);
+	printf("%%%%%%%%%%  PROCS %%%%%%%%%%\n\n");
 }

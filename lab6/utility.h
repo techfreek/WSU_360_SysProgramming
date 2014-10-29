@@ -1,7 +1,7 @@
 #ifndef utility_h
 #define utility_h
 
-#include "types.h"
+#include "type.h"
 #include "minode.h"
 #include "mount.h"
 #include "proc.h"
@@ -9,11 +9,11 @@
 void get_block(int devId, int blk, char buf[]);
 void put_block(int devId, int blk, char buf[]);
 int tokenize(char *path, char names[64][128]);
-char* dirname(const char* path);
-char* basename(const char* path);
+char* bdirname(const char* path);
+char* bbasename(const char* path);
 int getino(int devId, char *pathname);
 INODE* get_inode(int devId, int ino);
-int search(MINODE *mip, char *name);
+int searchMIP(MINODE *mip, char *name);
 int ialloc(int devId);
 int balloc(int devId);
 int idealloc(int devId, int ino);

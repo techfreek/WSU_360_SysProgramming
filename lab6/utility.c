@@ -1,6 +1,9 @@
 #include "utility.h"
 
-int fs_init() {
+extern PROC *running;
+extern MINODE *root;
+
+int fs_init(char* pathname) {
 	/*	
 		(1). 2 PROCs, P0 with uid=0, P1 with uid=1, all PROC.cwd = 0, fd[]=0
 		(2). PROC *running -> P0 -> P1 -> P0; (i.e. a circular link list)
@@ -8,59 +11,59 @@ int fs_init() {
 		(5). MINODE *root = 0;
 	*/
 
-	PROC *P0 = newProc(0);
-	PROC *P1 = newProc(1);
-
 	initMINODE();
 	
-	int rootDiskFD = open(/* filepath */, O_READ);
+	int rootDiskFD = open(pathname, O_RDWR);
 
 	if(!rootDiskFD) { 
-		printf("Could not open the specied disk: %s", path);
+		printf("Could not open the specied disk: %s", pathname);
 		exit(1);
 	}
 
-	int rootID = mountDisk(rootDiskFD, NULL, NULL, NULL); // Nulls are temporary until I learn what these fields are for
+	mount_root(rootDiskFD);
 
-	root = iget(rootDiskFD, 2);
-	return rootDiskFD);
+	printMINode(root);
+
+	return rootDiskFD;
 }
 
-int mount_root() {
+int mount_root(int fd) {
 	/*
-		dev = fd = open device for RW
-
-		read SUPER block to verify it's an EXT2 FS;
-			get nblocks, ninodes; SAVE them AS GLOBALs
- 
-		read GD to get block numbers of bmap,imap,inodes_start; save as globals
- 
 		root = iget(devId, 2);    // get root inode
-
-		(OPTIONAL): initialize mount table[0] for the mounted root devIdice.
-		Since we already saved ninode, nblocks, bmap, imap, inodes_start as 
-		globals, it is NOT necessary to repeat them in mount[0].
-    
+		most of this is handled by mountDisk()
 		Let cwd of both P0 and P1 point at the root minode (refCount=3)
 			P0.cwd = iget(devId, 2); 
 			P1.cwd = iget(devId, 2);
-     */
+    */
+
+	PROC *P0 = newProc(0);
+	PROC *P1 = newProc(1);
+
+	int rootID = mountDisk(fd, NULL, NULL, NULL); // Nulls are temporary until I learn what these fields are for
+	root = iget(rootID, 2);
+	P0->cwd = iget(rootID, 2);
+	P1->cwd = iget(rootID, 2);
+	printAllProcs();
+
 }
 
 int quit() {
 	//Close all MINODES, and save those that are dirty
-	printf("Quit not implemented yet\n");
+	closeAll();
+	killAllProcs();
+	unmountAll();
+	//printf("Quit not implemented yet\n");
 }
 
-void get_block(int dev, int blk, char buf[]) {
-	lseek(fd, (long)blk*BLKSIZE, 0);
-	read(fd, buf, BLKSIZE);
+void get_block(int devId, int blk, char buf[]) {
+	lseek(getFD(devId), (long)blk*BLKSIZE, 0);
+	read(getFD(devId), buf, BLKSIZE);
 }
 
 void put_block(int devId, int blk, char buf[]) {
 	//reverses the get_block algorithm
 	lseek(getFD(devId), (long)blk*BLKSIZE, 0);
-	write(fd, buf, BLKSIZE);
+	write(getFD(devId), buf, BLKSIZE);
 }
 
 /* used to look up the block via the inode */
@@ -91,13 +94,13 @@ int tokenize(char *path, char names[64][128]) {
 	}
 }
 
-char* dirname(const char* path) {
+char* bdirname(const char* path) {
 	char* copy = strdup(path);
 	char* temp = NULL;
 	printf("Dirname() not implemented yet\n");
 }
 
-char* basename(const char* path) {
+char* bbasename(const char* path) {
 	char* copy = strdup(path);
 	char* temp = NULL;
 	char* basename = NULL;
@@ -127,9 +130,9 @@ int getino(int devId, char *pathname) {
 	//INODE* file;
 	//rootDirBlock = 	firstIBlock();
 
-	numNames = tokenize(path, names);
+	numNames = tokenize(pathname, names);
 
-	targetINO = search(disk, names, numNames - 1, 2);
+	targetINO = search(devId, names, numNames - 1, 2);
 
 	//file = getInode(disk, targetINO);
 
@@ -167,11 +170,11 @@ int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 	DIR   *dp; 
 	INODE *parent;
 	INODE *file;
-	parent = get_inode(disk, ino);
+	parent = get_inode(devId, ino);
 	printf("Got parent INODE\n");
 	printInode(parent);
 	
-	get_block(disk->fd, parent->i_block[0], buf);
+	get_block(devId, parent->i_block[0], buf);
 	printf("Got parent's block\n");
 
 	dp = (DIR *)buf;
@@ -185,17 +188,17 @@ int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
 			temp, dp->inode, dp->rec_len, dp->name_len);
 
-		match = isStrEq(names[0], temp);
+		match = strEq(names[0], temp);
 
 		if(match) {
-			file = get_inode(disk, dp->inode);
+			file = get_inode(devId, dp->inode);
 
 			if(dirsRemaining == 0) {
 				printf("Found file!\n");
 				return dp->inode;
 			} else if(S_ISDIR(file->i_mode)) {
 				printf("Entering dir: %s\n", names[1]);
-				return search(disk, names + 1, dirsRemaining - 1, dp->inode);
+				return search(devId, names + 1, dirsRemaining - 1, dp->inode);
 			} else {
 				printf("Invalid path\n");
 			}
@@ -217,7 +220,7 @@ int ialloc(int devId) {
 	// read inode_bitmap block
 	get_block(getFD(devId), getIMap(devId), buf);
 
-	for (i=0; i < ninodes; i++){
+	for (i=0; i < getNInodes(devId); i++){
 		if (tst_bit(buf, i)==0){
 			 set_bit(buf,i);
 			 updateFreeInodes(devId, 1);
@@ -239,7 +242,7 @@ int balloc(int devId) {
 	// read block_bitmap block
 	get_block(getFD(devId), getBMap(devId), buf);
 
-	for (i=0; i < blocks; i++){
+	for (i=0; i < getNBlocks(devId); i++){
 		if (tst_bit(buf, i)==0){
 			set_bit(buf,i);
 			updateFreeBlocks(devId, 1);
@@ -268,7 +271,6 @@ int idealloc(int devId, int ino) {
 
 	return 0;
 }
-}
 
 int bdealloc(int devId, int bno) {
 	int  i;
@@ -286,7 +288,7 @@ int bdealloc(int devId, int bno) {
 }
 
 int strEq(const char* str1, const char* str2) {
-	return !(strcmp(str1, str2) == 0));
+	return !(strcmp(str1, str2) == 0);
 }
 
 int isEXT2(u32 magic) {
@@ -327,7 +329,7 @@ int updateFreeInodes(int devId, int delta) {
 	sp->s_free_inodes_count + delta;
 	put_block(getFD(devId), 1, buf);
 
-	get_block(dgetFD(devId), 2, buf);
+	get_block(getFD(devId), 2, buf);
 	gp = (GD *)buf;
 	gp->bg_free_inodes_count + delta;
 	put_block(getFD(devId), 2, buf);
@@ -353,7 +355,7 @@ void printInode(INODE* ip) {
 	printf("\n********** INODE Stats **********\n");
 	
 	printf("I_Mode  |  uid  |  size  |   atime   |  gid  |  links  \n");
-	printf("%8d| %5d | %6d | %9d | %5d | %d\n", ip->i_mode, ip->uid, ip->size, ip->atime, ip->gid, ip->links);
+	printf("%8d| %5d | %6d | %9d | %5d | %d\n", ip->i_mode, ip->i_uid, ip->i_size, ip->i_atime, ip->i_gid, ip->i_links_count);
 
 	printf("**********  End INODE  **********\n\n");
 }

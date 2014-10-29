@@ -16,6 +16,7 @@ typedef struct ext2_super_block SUPER;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 typedef struct DIR* SHUTUP; //tell the compiler to shut up
+typedef unsigned int u32;
 
 GD    *gp;
 SUPER *sp;
@@ -23,6 +24,7 @@ INODE *ip;
 DIR   *dp; 
 
 #define BLOCK_SIZE     1024
+#define BLKSIZE 1024
 
 // Block number of EXT2 FS on FD
 #define SUPERBLOCK        1
@@ -42,10 +44,12 @@ DIR   *dp;
 
 // Table sizes
 #define NMINODES        100
+#define NOFT            100
+#define NNAME			 64
 #define NMOUNT           10
 #define NPROC            10
 #define NFD              10
-#define NOFT            100
+
 
 // Open File Table
 typedef struct oft{
@@ -62,7 +66,7 @@ typedef struct proc{
 	int   pid, gid;
 	int   status;
 	struct minode *cwd;
-	int cwdDevId; store the devId of the current directory
+	int cwdDevId; //store the devId of the current directory
 	OFT   *fd[NFD];
 }PROC;
 
@@ -82,8 +86,8 @@ typedef struct mount{
 	int    nblocks,ninodes;
 	int    bmap, imap, iblk;
 	MINODE *mounted_inode;
-	char   name[64]; 
-	char   mount_name[64];
+	char   name[NNAME]; 
+	char   mount_name[NNAME];
 }MOUNT;
 
 #endif

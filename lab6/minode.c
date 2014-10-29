@@ -1,20 +1,14 @@
 #include "minode.h"
 MINODE* minodes[NMINODES];
 
-/*
-	INODE INODE;               // disk inode
-	int   dev, ino;
-	int   refCount;
-	int   dirty;
-	int   mounted;
-	struct mount *mountptr;
-*/
-
+extern PROC *running;
+MINODE *root = NULL;
 
 //ensures all are zero to start
 void initMINODE() {
-	for(int i = 0; i < NMINODES; i++) {
-		minodes[i]->INODE = (INODE)NULL;
+	int i;
+	for(i = 0; i < NMINODES; i++) {
+		//minodes[i]->INODE = NULL;
 		minodes[i]->dev = 0;
 		minodes[i]->ino = 0;
 		minodes[i]->refCount = 0;
@@ -48,7 +42,7 @@ MINODE *iget(int devId, int ino) {
 		}
 	}
 
-	if(i >= MINODES) { //we searched the entire array
+	if(i >= NMINODES) { //we searched the entire array
 		char buf[BLKSIZE];
 		INODE *ip;
 		ip = get_inode(devId, ino);
@@ -96,11 +90,11 @@ int iput(MINODE *mip) {
 	if(minodes[i]->refCount > 1) { //don't delete, just decrement refcount
 		minodes[i]->refCount--;
 	} else {
-		if(dirty) {
+		if(minodes[i]->dirty) {
 			//write all back
 		}
 		//clear all data
-		minodes[i]->INODE = (INODE)0;
+		//minodes[i]->INODE = NULL;
 		minodes[i]->mountptr = minodes[i]->dev = minodes[i]->ino = minodes[i]->refCount = minodes[i]->dirty = minodes[i]->mounted = 0; //clear ints
 		//Just set pointer to null cause we don't want to delete that pre-emptively
 	}
@@ -132,4 +126,26 @@ void printMINode(MINODE *mip) {
 	printf("%3d | %5d | %8d | %5d | %d\n", mip->dev, mip->ino, mip->refCount, mip->dirty, mip->mounted);
 
 	printf("##########  End MINODE  ##########\n\n");
+}
+
+void printAllMINodes() {
+	int i;
+	MINODE *curr;
+	printf("\n########## MINODEs ##########\n");
+	for (i = 0; i < NMINODES; ++i)
+	{
+		if(minodes[i]->ino) { //it's valid
+			printf("i   |Dev |  ino  | refCount | dirty | mounted \n");
+			printf("%3d |%3d | %5d | %8d | %5d | %d\n", curr->dev, curr->ino, curr->refCount, curr->dirty, curr->mounted);
+		}
+	}
+	printf("##########  End MINODEs  ##########\n\n");
+}
+
+
+
+void closeAll() {
+	//clears Minode table and
+	//Writes back all dirty blocks
+
 }

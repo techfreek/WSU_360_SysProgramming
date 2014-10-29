@@ -16,8 +16,8 @@ int mountDisk(int fd, MINODE *mounted_inode, char name[64], char mount_name[64])
 
 	mounttable[i]->dev = fd; //store the file descriptor
 	mounttable[i]->mounted_inode = mounted_inode; /* i need to look up where I get this field from */
-	mounttable[i]->name = strdup(name);
-	mounttable[i]->mount_name = strdup(mount_name);
+	strncpy(mounttable[i]->name, name, NNAME);
+	strncpy(mounttable[i]->mount_name, mount_name, NNAME);
 
 	get_block(fd, 1, buf);
 	sp = (SUPER *)buf;
@@ -50,6 +50,10 @@ int unMountDisk(int disk) {
 	free(mounttable[disk-1]->mounted_inode); //frees data held by the inode
 	free(mounttable[disk-1]); //frees the memory held by the mount struct
 	return 1;
+}
+
+int unmountAll() {
+printf("Unmount all not implemented yet\n");
 }
 
 int getFD(int disk) {
@@ -114,10 +118,8 @@ void printMountPtr(MOUNT* dp) {
 
 	printf("Device | nBlocks | nInodes | bmap | imap | iblk\n");
 	printf("%6d | %7d | %7d | %4d | %4d | %4d | %4d \n", dp->dev, 
-			dp->nBlocks, dp->nInodes, dp->bmap, dp->imap, dp->iblk);
+			dp->nblocks, dp->ninodes, dp->bmap, dp->imap, dp->iblk);
 	printf("-----------------------------------------------\n");
-	
-	//printMINode(dp->mounted_inode);
 
 	printf("@@@@@@@@@@  End Mount  @@@@@@@@@@\n\n");
 }

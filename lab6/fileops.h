@@ -9,6 +9,6 @@ int list_dir(MINODE* mip);
 int cd(char* pathname);
 void pwd();
 void rpwd();
-STAT* stat();
+//STAT* stat();
 
 #endif

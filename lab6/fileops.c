@@ -1,5 +1,8 @@
 #include "fileops.h"
 
+extern PROC *running;
+extern MINODE *root;
+
 int ls(char *pathname) {
 	/*int     ino = getino(dev, pathname);
 	MINODE *mip = iget(dev,ino);
@@ -35,21 +38,21 @@ int list_file(MINODE* mip, char* name) {
 	}
 
 	//Owner Privileges
-	S_IRUSR(ip->i_mode) ? putchar('r') : putchar('-');
-	S_IWUSR(ip->i_mode) ? putchar('w') : putchar('-');
-	S_IXUSR(ip->i_mode) ? putchar('x') : putchar('-');
+	(S_IRUSR & ip->i_mode) ? putchar('r') : putchar('-');
+	(S_IWUSR & ip->i_mode) ? putchar('w') : putchar('-');
+	(S_IXUSR & ip->i_mode) ? putchar('x') : putchar('-');
 
 	//Group Privileges
-	S_IRGRP(ip->i_mode) ? putchar('r') : putchar('-');
-	S_IWGRP(ip->i_mode) ? putchar('w') : putchar('-');
-	S_IXGRP(ip->i_mode) ? putchar('x') : putchar('-');
+	(S_IRGRP & ip->i_mode) ? putchar('r') : putchar('-');
+	(S_IWGRP & ip->i_mode) ? putchar('w') : putchar('-');
+	(S_IXGRP & ip->i_mode) ? putchar('x') : putchar('-');
 
 	//Other Privileges
-	S_IROTH(ip->i_mode) ? putchar('r') : putchar('-');
-	S_IWOTH(ip->i_mode) ? putchar('w') : putchar('-');
-	S_IXOTH(ip->i_mode) ? putchar('x') : putchar('-');
+	(S_IROTH & ip->i_mode) ? putchar('r') : putchar('-');
+	(S_IWOTH & ip->i_mode) ? putchar('w') : putchar('-');
+	(S_IXOTH & ip->i_mode) ? putchar('x') : putchar('-');
 
-	printf("%3s %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, ctime(&ip->ctime), name);
+	printf("%3s %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, ctime(&ip->i_ctime), name);
 	if(S_ISLNK(ip->i_mode)) {
 		printf(" -> %s\n", (char *)ip->i_block);
 	} else {
@@ -119,8 +122,8 @@ void rpwd() {
 }
 
 
-STAT* stat() {  // THIS IS TRIVIAL, hence no need to implement
+/*STAT* stat() {  // THIS IS TRIVIAL, hence no need to implement
 	ino = getino(dev, pathname);
 	mip = iget(dev, ino);
 	copy info from minode.INODE to a stat structure.
-}        
+} */       
