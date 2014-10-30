@@ -46,8 +46,11 @@ int list_file(MINODE* mip, char* name) {
 	 if ip->i_mode is a LNK file:
 			printf(" -> %s\n", (char *)ip->i_block);
 			*/
-	INODE *ip = &mip->INODE;
+	printMINode(mip);
+	INODE *ip = &(mip->INODE);
 	//File type
+
+	printf("i_mode reg: %d dir: %d lnk: %d\n", S_ISREG(ip->i_mode), S_ISDIR(ip->i_mode), S_ISLNK(ip->i_mode));
 	if(S_ISREG(ip->i_mode)) {
 		printf("-");
 	} else if(S_ISDIR(ip->i_mode)) {
@@ -71,7 +74,11 @@ int list_file(MINODE* mip, char* name) {
 	(S_IWOTH & ip->i_mode) ? printf("w") : printf("-");
 	(S_IXOTH & ip->i_mode) ? printf("x") : printf("-");
 
-	printf("%3s %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, ctime(&ip->i_ctime), name);
+	char time[NNAME];
+	strcpy(time, ctime(&ip->i_ctime));
+	time[strlen(time) - 1] = 0;
+
+	printf("%3d %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, time, name);
 	if(S_ISLNK(ip->i_mode)) {
 		printf(" -> %s\n", (char *)ip->i_block);
 	} else {
@@ -105,7 +112,7 @@ int list_dir(MINODE* mip) {
 
 		while(cp < (buf + 1024)) {
 			getDIRFileName(dp, name);
-			printf("%d %d %d %s\n", dp->inode, dp->rec_len, dp->name_len, name);
+			printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
 			MINODE *mip = iget(devId, dp->inode);
 			if(S_ISREG(mip->INODE.i_mode)) {
 				list_file(mip, name);
@@ -118,7 +125,8 @@ int list_dir(MINODE* mip) {
 } 
 
 int getDIRFileName(DIR* dp, char buf[]) {
-	strncpy(buf, dp->name, (dp->name_len - 1));
+	strncpy(buf, dp->name, (dp->name_len));
+	buf[dp->name_len] = 0; //make sure we don't have a longer name that isn't overwritten
 }
 
 int cd(char* pathname) {
@@ -153,7 +161,11 @@ int cd(char* pathname) {
 
 void pwd() {
 	//print the pathname of running PROC's CWD
-	rpwd(running->cwd);
+	if(running->cwd == root) {
+		printf("/");
+	} else {
+		rpwd(running->cwd);
+	}
 	printf("\n");
 }
 

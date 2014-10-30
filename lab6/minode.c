@@ -34,7 +34,7 @@ MINODE *iget(int devId, int ino) {
 		other fields and return its address as a MINODE pointer,
 	*/
 
-	printf("Getting ino = %d on disk = %d\n", ino, devId);
+	//printf("Getting ino = %d on disk = %d\n", ino, devId);
 
 	int i = 0, firstOpenSlot = -1;
 	for(i = 0; i < NMINODES; i++) {
@@ -44,11 +44,11 @@ MINODE *iget(int devId, int ino) {
 		}
 		if(minodes[i]->ino == 0 && (firstOpenSlot < 0)) { //If we haven't found an open slot, and it's open, store the index
 			firstOpenSlot = i;
-			printf("First open MINODE slot: %d\n", firstOpenSlot);
+			printf("\nFirst open MINODE slot: %d\n", firstOpenSlot);
 		}
 	}
 
-	printf("i = %d\n", i);
+	//printf("i = %d\n", i);
 
 	if(i == NMINODES) { //we searched the entire array
 		printf("Ino = %d was not found in minode table\n", ino);
@@ -64,6 +64,7 @@ MINODE *iget(int devId, int ino) {
 		mip->dirty = 0;
 		printf("Getting mount pointer for disk %d\n", devId);
 		mip->mountptr = getMountPtr(devId);
+		printf("Got disk ptr\n");
 		return mip;
 	} else { //File is already on there
 		printf("%d users are currently connected to: %d\n", minodes[i]->refCount++, minodes[i]->ino);
@@ -92,23 +93,26 @@ int iput(MINODE *mip) {
 		and write the block back to disk.
 	*/
 
-	int i = 0;
+	int i = 0, found = 0;
 	for(i = 0; i < NMINODES; i++) {
 		if((minodes[i]->dev == mip->dev) && (minodes[i]->ino == minodes[i]->ino)) { //we found our MINODE
+			found++;
 			break;
 		}
 	}
-
-	if(minodes[i]->refCount > 1) { //don't delete, just decrement refcount
-		minodes[i]->refCount--;
-	} else {
-		if(minodes[i]->dirty) {
-			//write all back
+	if(found) {
+		if(minodes[i]->refCount > 1) { //don't delete, just decrement refcount
+			minodes[i]->refCount--;
+			printf("%d other users are still using ino = %d\n", minodes[i]->refCount, minodes[i]->ino);
+		} else {
+			if(minodes[i]->dirty) {
+				//write all back
+			}
+			//clear all data
+			//minodes[i]->INODE = NULL;
+			minodes[i]->mountptr = minodes[i]->dev = minodes[i]->ino = minodes[i]->refCount = minodes[i]->dirty = minodes[i]->mounted = 0; //clear ints
+			//Just set pointer to null cause we don't want to delete that pre-emptively
 		}
-		//clear all data
-		//minodes[i]->INODE = NULL;
-		minodes[i]->mountptr = minodes[i]->dev = minodes[i]->ino = minodes[i]->refCount = minodes[i]->dirty = minodes[i]->mounted = 0; //clear ints
-		//Just set pointer to null cause we don't want to delete that pre-emptively
 	}
 	return;
 }
