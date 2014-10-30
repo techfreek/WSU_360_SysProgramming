@@ -27,15 +27,21 @@ int main() {
 		}
 
 		printf("CMD: %s PATH: %s\n", cmd, pathname);
-		if (!strcmp(cmd, "ls")) {
+		if (strEq(cmd, "ls")) {
 			ls(pathname);
-		} else if (!strcmp(cmd, "cd")) {
+		} else if (strEq(cmd, "cd")) {
 			cd(pathname);
-		} else if (!strcmp(cmd, "pwd")) {
+		} else if (strEq(cmd, "pwd")) {
 			pwd(running->cwd);
-		} else if (!strcmp(cmd, "quit") || !strcmp(cmd, "q")) {
+		} else if (strEq(cmd, "quit") || strEq(cmd, "q")) {
 			quit(); // write back any dirty in-memory INODE; exit(0);
 			exit(0);
+		} else if(strEq(cmd, "procs")) {
+			printAllProcs();
+		} else if(strEq(cmd, "minodes")) {
+			printAllMINodes();
+		} else if(strEq(cmd, "mounts")) {
+			printAllMounts();
 		}
 	}
 }

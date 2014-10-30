@@ -67,10 +67,10 @@ void printAllProcs() {
 		printf("\nUID | PID | GID | STATUS | devID \n");
 		printf("%3d | %3d | %3d | %6d | %d\n", curr->uid, curr->pid, curr->gid, curr->status, curr->cwdDevId);
 
-		printf("\nCWD: \n");
+		printf("\nCWD: ");
 		printMINode(curr->cwd);
 
-		printf("\nOpen files: \n");
+		printf("Open files: \n");
 		printf("i |  mode  | refCount | offset \n");
 		printf("-------------------------------\n");
 		for(i = 0; i < NFD; i++) {
@@ -80,7 +80,7 @@ void printAllProcs() {
 			}
 		}
 
-		printf("-------------------------------\n");
+		printf("\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n");
 		curr = curr->next;
 	} while ((curr != NULL) && (curr != start));
 	printf("%%%%%%%%%%  END PROCS %%%%%%%%%%\n\n");

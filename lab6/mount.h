@@ -15,6 +15,7 @@ int getNInodes(int disk);
 int getBMap(int disk);
 int getIMap(int disk);
 int getIBlk(int disk);
+void printAllMounts();
 void printMountPtr(MOUNT* dp);
 void printMount(int disk);
 MOUNT* getMountPtr(int disk);

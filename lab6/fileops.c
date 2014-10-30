@@ -25,6 +25,9 @@ int ls(char *pathname) {
 		ino = running->cwd->ino;
 		mip = running->cwd;
 	}
+
+	printf("ls dir\n");
+	printMINode(mip);
 	
 	if(S_ISREG(mip->INODE.i_mode)) {
 		printf("Listing file\n");
@@ -33,7 +36,9 @@ int ls(char *pathname) {
 		list_dir(mip);
 	}
 
-	iput(mip); //close file
+	if(strlen(pathname)) { //the local dir is already open
+		iput(mip); //close file
+	}
 }
 
 int list_file(MINODE* mip, char* name) {
@@ -111,11 +116,11 @@ int list_dir(MINODE* mip) {
 		while(cp < (buf + 1024)) {
 			getDIRFileName(dp, name);
 			//printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
-			MINODE *mip = iget(devId, dp->inode);
-			//if(S_ISREG(mip->INODE.i_mode)) {
-				list_file(mip, name);
-			//}
-			iput(mip); //relase hold
+			cip = iget(devId, dp->inode);
+			//printf("Opened %d\n", dp->inode);
+			list_file(cip, name);
+			//printf("Closing %d\n", dp->inode);
+			iput(cip); //relase hold
 			cp += dp->rec_len;
 			dp = (SHUTUP)cp;
 		}
@@ -144,22 +149,32 @@ int cd(char* pathname) {
 	if(!strlen(pathname)) {
 		if(running->cwd != root) {
 			iput(running->cwd); //close file (don't leave it open for nothing)
-			running->cwd = root;
+			running->cwd = iget(1, 2);
 		}
-	} else {
+	} else if (strEq(pathname, "/")) {
+		printf("CD to root\n");
+		iput(running->cwd);
+		printf("Closed CWD\n");
+		running->cwd = iget(1, 2);
+	} else  {
 		printf("DevId = %d\n", devId);
 		int ino = getino(devId, running->cwd->ino, pathname);
-		MINODE* mip = iget(devId, ino);
+		if(ino) {
+			if(ino != running->cwd->ino) {
+				MINODE* mip = iget(devId, ino);
 
-		if(S_ISDIR(mip->INODE.i_mode)) {
-			iput(running->cwd); //close file (don't leave it open for nothing)
-			running->cwd = mip;
-			printf("Directory changed to:\n");
-			printMINode(mip);
+				if(S_ISDIR(mip->INODE.i_mode)) {
+					iput(running->cwd); //close file (don't leave it open for nothing)
+					running->cwd = mip;
+					printf("Directory changed to:\n");
+					printMINode(mip);
+				} else {
+					printf("Specified path is invalid\n");
+				}
+			}
 		} else {
-			printf("Specified path is invalid\n");
+			printf("File or path is invalid\n");
 		}
-
 	}
 }
 

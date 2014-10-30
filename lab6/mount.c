@@ -57,8 +57,10 @@ int unMountDisk(int disk) {
 		Then have it go and clean up any associated files on the minode table
 	 */
 	//MOUNT* unmount = mounttable[disk - 1];
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	free(mounttable[disk-1]->mounted_inode); //frees data held by the inode
 	free(mounttable[disk-1]); //frees the memory held by the mount struct
+	mounttable[disk-1] = NULL;
 	return 1;
 }
 
@@ -67,6 +69,7 @@ int unmountAll() {
 }
 
 int getFD(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->dev;
 }
 
@@ -81,39 +84,57 @@ int getDevID(int fd) { //In case we lost the devId but have the fd
 }
 
 MINODE* getMountedInode(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->mounted_inode;
 }
 
 char* getName(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->name;
 }
 
 char* getMountName(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->mount_name;
 }
 
 int getNBlocks(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->nblocks;
 }
 
 int getNInodes(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->ninodes;
 }
 
 int getBMap(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->bmap;
 }
 
 int getIMap(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->imap;
 }
 
 int getIBlk(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk - 1]->iblk;
 }
 
 MOUNT* getMountPtr(int disk) {
+	if(disk == 0) { printf("Invalid disk ID"); return 0; }
 	return mounttable[disk -1];
+}
+
+void printAllMounts() {
+	int i;
+	for(i = 0; i < NMOUNT; i++) {
+		if(mounttable[i] != NULL) {
+			printMount(i + 1);
+		}
+	}
 }
 
 void printMount(int disk) {
@@ -127,7 +148,7 @@ void printMountPtr(MOUNT* dp) {
 	printf("Mount Name: %s\n", dp->mount_name);
 
 	printf("Device | nBlocks | nInodes | bmap | imap | iblk\n");
-	printf("%6d | %7d | %7d | %4d | %4d | %4d | %4d \n", dp->dev, 
+	printf("%6d | %7d | %7d | %4d | %4d | %4d\n", dp->dev, 
 			dp->nblocks, dp->ninodes, dp->bmap, dp->imap, dp->iblk);
 	printf("-----------------------------------------------\n");
 

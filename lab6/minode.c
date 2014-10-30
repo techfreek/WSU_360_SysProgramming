@@ -36,10 +36,11 @@ MINODE *iget(int devId, int ino) {
 
 	//printf("Getting ino = %d on disk = %d\n", ino, devId);
 
-	int i = 0, firstOpenSlot = -1;
+	int i = 0, firstOpenSlot = -1, found = 0;
 	for(i = 0; i < NMINODES; i++) {
 		if(minodes[i]->ino == ino) { //File is already loaded
 			//printf("MINODE found!\n");
+			found++;
 			break;
 		}
 		if(minodes[i]->ino == 0 && (firstOpenSlot < 0)) { //If we haven't found an open slot, and it's open, store the index
@@ -50,11 +51,11 @@ MINODE *iget(int devId, int ino) {
 
 	//printf("i = %d\n", i);
 
-	if(i == NMINODES) { //we searched the entire array
+	if(!found) { //we searched the entire array
 		//printf("Ino = %d was not found in minode table\n", ino);
 		char buf[BLKSIZE];
 		INODE *ip;
-		//printf("Getting inode for ino %d\n", ino);
+		//printf("Getting inode for ino %d on disk %d\n", ino, devId);
 		ip = get_inode(devId, ino);
 		MINODE* mip = minodes[firstOpenSlot];
 		mip->INODE = *ip; //Copy over IP content
@@ -68,7 +69,7 @@ MINODE *iget(int devId, int ino) {
 		return mip;
 	} else { //File is already on there
 		//printf("%d users are currently connected to: %d\n", minodes[i]->refCount++, minodes[i]->ino);
-		//minodes[i]->refCount++;
+		minodes[i]->refCount++;
 		
 		return minodes[i];
 	}
@@ -95,7 +96,7 @@ int iput(MINODE *mip) {
 
 	int i = 0, found = 0;
 	for(i = 0; i < NMINODES; i++) {
-		if((minodes[i]->dev == mip->dev) && (minodes[i]->ino == minodes[i]->ino)) { //we found our MINODE
+		if((minodes[i]->dev == mip->dev) && (minodes[i]->ino == mip->ino)) { //we found our MINODE
 			found++;
 			break;
 		}
@@ -106,10 +107,12 @@ int iput(MINODE *mip) {
 			printf("%d other users are still using ino = %d\n", minodes[i]->refCount, minodes[i]->ino);
 		} else {
 			if(minodes[i]->dirty) {
+				printf("inode is dirty, should write back\n");
 				//write all back
 			}
 			//clear all data
 			//minodes[i]->INODE = NULL;
+			//printf("Unmounting ino %d\n", mip->ino);
 			minodes[i]->mountptr = minodes[i]->dev = minodes[i]->ino = minodes[i]->refCount = minodes[i]->dirty = minodes[i]->mounted = 0; //clear ints
 			//Just set pointer to null cause we don't want to delete that pre-emptively
 		}
@@ -152,7 +155,8 @@ void printAllMINodes() {
 	{
 		if(minodes[i]->ino) { //it's valid
 			printf("i   |Dev |  ino  | refCount | dirty | mounted \n");
-			printf("%3d |%3d | %5d | %8d | %5d | %d\n", curr->dev, curr->ino, curr->refCount, curr->dirty, curr->mounted);
+			printf("%3d |%3d | %5d | %8d | %5d | %d\n", 
+					i, minodes[i]->dev, minodes[i]->ino, minodes[i]->refCount, minodes[i]->dirty, minodes[i]->mounted);
 		}
 	}
 	printf("\n##########  End MINODEs  ##########\n\n");

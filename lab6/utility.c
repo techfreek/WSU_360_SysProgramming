@@ -155,7 +155,36 @@ int searchMIP(MINODE *mip, char *name) {
 	return 0;
 }
 
-int search(int devId, char names[64][128], int dirsRemaining, int ino) {
+int search(int devId, char names[64][128], int dirsRemaining, int pIno) {
+	char buf[BLKSIZE];
+
+	INODE *parent;
+	INODE *file;
+
+	parent = get_inode(devId, pIno);
+	int i = 0, tIno = 0;
+
+	for(i = 0; i < 12 && !tIno && parent->i_block[i]; i++) {
+		getchar();
+		get_block(devId, parent->i_block[i], buf);
+		tIno = findName(buf, names[0]);
+	}
+
+	if(!dirsRemaining) { //if we at the end of the search
+		return tIno;
+	} else {
+		file = get_inode(devId, tIno);
+		if(S_ISDIR(file->i_mode)) {
+			getchar();
+			return search(devId, names + 1, dirsRemaining -1, tIno);
+		} else {
+			return 0;
+		}
+	}
+}
+
+
+/*int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 	/*
 		Logic:
 		Read block
@@ -168,7 +197,7 @@ int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 				return search(names+1, dirsRemaing - 1, ino of current dir)
 			//If we get out of the loop, the path is invalid
 				return 0
-	*/
+	*//*
 
 	char buf[BLKSIZE];
 	char temp[BLKSIZE];
@@ -222,6 +251,30 @@ int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 	printf("File not found\n");
 	return 0;
 
+}*/
+
+int findName(char buf[], char name[]) {
+	char temp[BLKSIZE];
+	char *cp;
+	DIR   *dp; 
+
+	dp = (DIR *)buf;
+	cp = buf;
+	while(cp < (buf + 1024)) {
+		getDIRFileName(dp, temp);
+		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
+			temp, dp->inode, dp->rec_len, dp->name_len);
+		getchar();
+		printf("%s = %s ? = %d\n", name, temp, strEq(name, temp));
+		if(strEq(name, temp)) {
+			return dp->inode;
+		}
+
+		cp += dp->rec_len;
+		dp = (SHUTUP)cp;        // pull dp along to the next record
+	}
+
+	return 0; //Coudn't be found
 }
 
 int ialloc(int devId) {
