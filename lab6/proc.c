@@ -16,9 +16,21 @@ PROC* newProc(int uid) {
 	process->pid = numProcesses++; //auto increment
 	process->gid = 0;
 	process->status = READY;
-	process->cwd = NULL;
+	printf("Setting proc cwd\n");
+	process->cwd = root;
+	printf("Setting devId with %d\n", root->dev);
+	process->cwdDevId = getDevID(root->dev);
 
-	OFT files[NFD] = {NULL};
+	OFT files[NFD];
+
+	int i = 0;
+	for (i = 0; i < NFD; ++i)
+	{
+		files[i].mode = 0;
+		files[i].refCount = 0;
+		files[i].inodeptr = NULL;
+		files[i].offset = 0;
+	}
 
 	*process->fd = files;
 
@@ -52,17 +64,17 @@ void printAllProcs() {
 
 	printf("\n%%%%%%%%%% Procs %%%%%%%%%%\n");
 	do {
-		printf("UID | PID | GID | STATUS | devID \n");
-		printf("%3d | %3d | %3d | %6d | %d", curr->uid, curr->pid, curr->gid, curr->status, curr->cwdDevId);
+		printf("\nUID | PID | GID | STATUS | devID \n");
+		printf("%3d | %3d | %3d | %6d | %d\n", curr->uid, curr->pid, curr->gid, curr->status, curr->cwdDevId);
 
-		printf("CWD: \n");
+		printf("\nCWD: \n");
 		printMINode(curr->cwd);
 
-		printf("Open files: \n");
+		printf("\nOpen files: \n");
 		printf("i |  mode  | refCount | offset \n");
 		printf("-------------------------------\n");
 		for(i = 0; i < NFD; i++) {
-			if(curr->fd[i] != NULL) {
+			if(curr->fd[i] != NULL && curr->fd[i]->refCount > 0) {
 				printf("%d | %6d | %8d | %d\n", i, 
 					curr->fd[i]->mode, curr->fd[i]->refCount, /*curr->fd[i]->inodeptr->ino,*/ curr->fd[i]->offset);
 			}
@@ -71,5 +83,5 @@ void printAllProcs() {
 		printf("-------------------------------\n");
 		curr = curr->next;
 	} while ((curr != NULL) && (curr != start));
-	printf("%%%%%%%%%%  PROCS %%%%%%%%%%\n\n");
+	printf("%%%%%%%%%%  END PROCS %%%%%%%%%%\n\n");
 }

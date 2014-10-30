@@ -39,22 +39,22 @@ MINODE *iget(int devId, int ino) {
 	int i = 0, firstOpenSlot = -1;
 	for(i = 0; i < NMINODES; i++) {
 		if(minodes[i]->ino == ino) { //File is already loaded
-			printf("MINODE found!\n");
+			//printf("MINODE found!\n");
 			break;
 		}
 		if(minodes[i]->ino == 0 && (firstOpenSlot < 0)) { //If we haven't found an open slot, and it's open, store the index
 			firstOpenSlot = i;
-			printf("\nFirst open MINODE slot: %d\n", firstOpenSlot);
+			//printf("\nFirst open MINODE slot: %d\n", firstOpenSlot);
 		}
 	}
 
 	//printf("i = %d\n", i);
 
 	if(i == NMINODES) { //we searched the entire array
-		printf("Ino = %d was not found in minode table\n", ino);
+		//printf("Ino = %d was not found in minode table\n", ino);
 		char buf[BLKSIZE];
 		INODE *ip;
-		printf("Getting inode for ino %d\n", ino);
+		//printf("Getting inode for ino %d\n", ino);
 		ip = get_inode(devId, ino);
 		MINODE* mip = minodes[firstOpenSlot];
 		mip->INODE = *ip; //Copy over IP content
@@ -62,12 +62,12 @@ MINODE *iget(int devId, int ino) {
 		mip->refCount = 1;
 		mip->ino = ino;
 		mip->dirty = 0;
-		printf("Getting mount pointer for disk %d\n", devId);
+		//printf("Getting mount pointer for disk %d\n", devId);
 		mip->mountptr = getMountPtr(devId);
-		printf("Got disk ptr\n");
+		//printf("Got disk ptr\n");
 		return mip;
 	} else { //File is already on there
-		printf("%d users are currently connected to: %d\n", minodes[i]->refCount++, minodes[i]->ino);
+		//printf("%d users are currently connected to: %d\n", minodes[i]->refCount++, minodes[i]->ino);
 		//minodes[i]->refCount++;
 		
 		return minodes[i];
@@ -157,8 +157,6 @@ void printAllMINodes() {
 	}
 	printf("\n##########  End MINODEs  ##########\n\n");
 }
-
-
 
 void closeAll() {
 	//clears Minode table and

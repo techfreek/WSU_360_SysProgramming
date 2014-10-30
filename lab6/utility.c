@@ -37,13 +37,14 @@ int mount_root(int fd) {
 			P0.cwd = iget(devId, 2); 
 			P1.cwd = iget(devId, 2);
     */
-	printf("Creating inital procs\n");
-	PROC *P0 = newProc(0);
-	PROC *P1 = newProc(1);
 
 	printf("Mounting root...\n");
 	int rootID = mountDisk(fd, NULL, NULL, NULL); // Nulls are temporary until I learn what these fields are for
 	root = iget(rootID, 2);
+
+	printf("Creating inital procs\n");
+	PROC *P0 = newProc(0);
+	PROC *P1 = newProc(1);
 
 	printf("Initializing P0 CWD\n");
 	P0->cwd = iget(rootID, 2);
@@ -127,7 +128,7 @@ char* bbasename(const char* path) {
 	}
 }
 
-int getino(int devId, char *pathname) {
+int getino(int devId, int startIno, char *pathname) {
 	/*
 		[x] Tokenize path 
 		[x] search
@@ -140,7 +141,7 @@ int getino(int devId, char *pathname) {
 
 	numNames = tokenize(pathname, names);
 
-	targetINO = search(devId, names, numNames - 1, 2);
+	targetINO = search(devId, names, numNames - 1, startIno);
 
 	//file = getInode(disk, targetINO);
 
@@ -173,11 +174,12 @@ int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 	char temp[BLKSIZE];
 	char *cp;
 
-	printf("\nSearching for %s, %d levels remain\n", names[0], dirsRemaining);
+	printf("\nSearching for %s from %d, on %d, %d levels remain\n", names[0], ino, devId, dirsRemaining);
 
 	DIR   *dp; 
 	INODE *parent;
 	INODE *file;
+	printf("Getting parent inode\n");
 	parent = get_inode(devId, ino);
 	printf("Got parent INODE\n");
 	printInode(parent);
@@ -191,18 +193,19 @@ int search(int devId, char names[64][128], int dirsRemaining, int ino) {
 	int match = 0;
 
 	while(cp < (buf + 1024)) {
-		strncpy(temp, dp->name, dp->name_len);
-		temp[dp->name_len] = '\0';
+		getDIRFileName(dp, temp);
 		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
 			temp, dp->inode, dp->rec_len, dp->name_len);
 
+		printf("Names: %s\n", names[0]);
 		match = strEq(names[0], temp);
 
 		if(match) {
 			file = get_inode(devId, dp->inode);
 
 			if(dirsRemaining == 0) {
-				printf("Found file!\n");
+				printf("Found file: %d\n", dp->inode);
+				printInode(file);
 				return dp->inode;
 			} else if(S_ISDIR(file->i_mode)) {
 				printf("Entering dir: %s\n", names[1]);
@@ -296,7 +299,7 @@ int bdealloc(int devId, int bno) {
 }
 
 int strEq(const char* str1, const char* str2) {
-	return !(strcmp(str1, str2) == 0);
+	return (strcmp(str1, str2) == 0);
 }
 
 int isEXT2(u32 magic) {

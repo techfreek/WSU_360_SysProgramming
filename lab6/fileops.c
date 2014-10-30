@@ -17,7 +17,7 @@ int ls(char *pathname) {
 	int ino;
 	MINODE *mip;
 
-	printf("LSing path: %s\n", pathname);
+	//printf("LSing path: %s\n", pathname);
 	if(strlen(pathname)) { //if a path is provided
 		ino = getino(devId, pathname);	
 		mip = iget(devId, ino);
@@ -46,11 +46,9 @@ int list_file(MINODE* mip, char* name) {
 	 if ip->i_mode is a LNK file:
 			printf(" -> %s\n", (char *)ip->i_block);
 			*/
-	printMINode(mip);
+	//printMINode(mip);
 	INODE *ip = &(mip->INODE);
 	//File type
-
-	printf("i_mode reg: %d dir: %d lnk: %d\n", S_ISREG(ip->i_mode), S_ISDIR(ip->i_mode), S_ISLNK(ip->i_mode));
 	if(S_ISREG(ip->i_mode)) {
 		printf("-");
 	} else if(S_ISDIR(ip->i_mode)) {
@@ -112,11 +110,11 @@ int list_dir(MINODE* mip) {
 
 		while(cp < (buf + 1024)) {
 			getDIRFileName(dp, name);
-			printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
+			//printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
 			MINODE *mip = iget(devId, dp->inode);
-			if(S_ISREG(mip->INODE.i_mode)) {
+			//if(S_ISREG(mip->INODE.i_mode)) {
 				list_file(mip, name);
-			}
+			//}
 			iput(mip); //relase hold
 			cp += dp->rec_len;
 			dp = (SHUTUP)cp;
@@ -141,17 +139,23 @@ int cd(char* pathname) {
 		iput(running PROC's cwd);
 		set running PROC's cwd to mip;
 	 }*/
+	printf("CD to: %s\n", pathname);
+	int devId = running->cwdDevId;
 	if(!strlen(pathname)) {
-		iput(running->cwd); //close file (don't leave it open for nothing)
-		running->cwd = root;
+		if(running->cwd != root) {
+			iput(running->cwd); //close file (don't leave it open for nothing)
+			running->cwd = root;
+		}
 	} else {
-		int devId = running->cwdDevId;
-		int ino = getino(devId, pathname);
+		printf("DevId = %d\n", devId);
+		int ino = getino(devId, running->cwd->ino, pathname);
 		MINODE* mip = iget(devId, ino);
 
 		if(S_ISDIR(mip->INODE.i_mode)) {
 			iput(running->cwd); //close file (don't leave it open for nothing)
 			running->cwd = mip;
+			printf("Directory changed to:\n");
+			printMINode(mip);
 		} else {
 			printf("Specified path is invalid\n");
 		}

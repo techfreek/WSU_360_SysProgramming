@@ -11,7 +11,7 @@ void put_block(int devId, int blk, char buf[]);
 int tokenize(char *path, char names[64][128]);
 char* bdirname(const char* path);
 char* bbasename(const char* path);
-int getino(int devId, char *pathname);
+int getino(int devId, int startIno, char *pathname);
 INODE* get_inode(int devId, int ino);
 int searchMIP(MINODE *mip, char *name);
 int ialloc(int devId);

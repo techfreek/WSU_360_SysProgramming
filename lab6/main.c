@@ -20,18 +20,20 @@ int main() {
 		line[strlen(line)-1] = 0;  // kill the \n char at end
 
 		getCMD(line);
+		getPath(line);
 
 		if (line[0]==0) {
 			continue;
 		}
 
+		printf("CMD: %s PATH: %s\n", cmd, pathname);
 		if (!strcmp(cmd, "ls")) {
 			ls(pathname);
 		} else if (!strcmp(cmd, "cd")) {
 			cd(pathname);
 		} else if (!strcmp(cmd, "pwd")) {
 			pwd(running->cwd);
-		} else if (!strcmp(cmd, "quit")) {
+		} else if (!strcmp(cmd, "quit") || !strcmp(cmd, "q")) {
 			quit(); // write back any dirty in-memory INODE; exit(0);
 			exit(0);
 		}
@@ -47,8 +49,9 @@ int getCMD(char *line) {
 
 int getPath(char *line) {
 	char* copy = strdup(line); //ensure we don't mess up the original
-	strtok(copy, " "); //This will be the command, ignore
+	strtok(copy, " "); //This will be the command, ignore 
 	char* temp = strtok(NULL, " ");
+
 	if(temp) {
 		strcpy(pathname, temp);
 	} else {
@@ -56,7 +59,4 @@ int getPath(char *line) {
 	}
 
 	free(copy); //free unneeded memory
-	free(temp);
-
-
 }
