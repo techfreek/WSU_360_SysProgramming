@@ -169,6 +169,7 @@ int cd(char* pathname) {
 					printf("Directory changed to:\n");
 					printMINode(mip);
 				} else {
+					iput(mip);
 					printf("Specified path is invalid\n");
 				}
 			}
@@ -192,10 +193,17 @@ MINODE* rpwd(MINODE *mip) {
 	//recursive step of pwd
 	//if root, return
 	//then on return, print '/' then filename
+	printf("Recursion!\n");
 	if(mip == root) {
 		return mip; //return parent
 	} else {
-		MINODE* parent = rpwd(mip);
+		int devID = getDevID(mip->dev);
+		printf("devID for device %d is %d\n", mip->dev, devID);
+		printf("Attempting to find parent ino\n");
+		int pIno = findpIno(mip);
+		printf("getting ino %d on disk %d\n", devID, pIno);
+		MINODE* parent = iget(devID, pIno);
+		/*MINODE* parent =*/ rpwd(parent);
 		char* name = (char*)malloc(sizeof(char) * NNAME);
 
 		findmyname(parent, mip->ino, name);

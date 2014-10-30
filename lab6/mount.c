@@ -76,7 +76,7 @@ int getFD(int disk) {
 int getDevID(int fd) { //In case we lost the devId but have the fd
 	int i = 0;
 	for(; i < NMOUNT; i++) {
-		if(mounttable[i]->dev == fd) {
+		if(mounttable[i] != NULL && mounttable[i]->dev == fd) {
 			return i + 1;
 		}
 	}

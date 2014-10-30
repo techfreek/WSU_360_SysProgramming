@@ -126,16 +126,63 @@ int findmyname(MINODE *parent, int myino, char *myname) {
 		the name string of myino in the parent's data block. This is the SAME
 		as SEARCH() by myino, then copy its name string into myname[ ].
 	*/
+	//printf("findmyname() not implemented yet\n");
+	
 
+	char buf[BLKSIZE];
+	char temp[BLKSIZE];
+	int i;
 
+	char *cp;
+	DIR *dp;
+
+	for(i = 0; i < 12 && parent->INODE.i_block[i]; i++) {
+		get_block(getDevID(parent->dev), parent->INODE.i_block[i], buf);	
+	
+		dp = (DIR *)buf;
+		cp = buf;
+	
+		while(cp < (buf + 1024)) {
+			if(dp->inode == myino) {
+				getDIRFileName(dp, temp);
+				strcpy(myname, temp);
+				return;
+			}
+			
+			cp += dp->rec_len;
+			dp = (SHUTUP)cp;
+		}
+	}
+	return NULL;
 
 }
 
-int findino(MINODE *mip, int myino, int parentino) {
+int findpIno(MINODE *mip) {
 	/*
 		For a DIR Minode, extract the inumbers of . and .. 
 		Read in 0th data block. The inumbers are in the first two dir entries.
 	*/
+	//read first block
+	//return inode of '..'
+	//printf("findpIno() not implemented yet\n");
+
+	char buf[BLKSIZE];
+	
+	get_block(getDevID(mip->dev), mip->INODE.i_block[0], buf);
+	int pIno = findName(buf, "..");
+	return pIno;
+}
+
+int findmyino(MINODE *mip) {
+	//open first block, read '.' inode
+	//return
+	//iprintf("findmyino() not implemented yet()\n");
+	
+	char buf[BLKSIZE];
+	
+	get_block(getDevID(mip->dev), mip->INODE.i_block[0], buf);
+	int myino = findName(buf, ".");
+	return myino;
 }
 
 void printMINode(MINODE *mip) {

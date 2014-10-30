@@ -183,76 +183,6 @@ int search(int devId, char names[64][128], int dirsRemaining, int pIno) {
 	}
 }
 
-
-/*int search(int devId, char names[64][128], int dirsRemaining, int ino) {
-	/*
-		Logic:
-		Read block
-		Scans through each of the files in the block to see if's name matches
-			if it matches and is a file, and it's the file we are looking for
-				return it's ino
-			else its a match, but it's a file and it's not the file we are looking for (dirsRemaining == 0)
-				return 0
-			else if it's a directory and it's the next one on the path
-				return search(names+1, dirsRemaing - 1, ino of current dir)
-			//If we get out of the loop, the path is invalid
-				return 0
-	*//*
-
-	char buf[BLKSIZE];
-	char temp[BLKSIZE];
-	char *cp;
-
-	printf("\nSearching for %s from %d, on %d, %d levels remain\n", names[0], ino, devId, dirsRemaining);
-
-	DIR   *dp; 
-	INODE *parent;
-	INODE *file;
-	printf("Getting parent inode\n");
-	parent = get_inode(devId, ino);
-	printf("Got parent INODE\n");
-	printInode(parent);
-	
-	get_block(devId, parent->i_block[0], buf);
-	printf("Got parent's block\n");
-
-	dp = (DIR *)buf;
-	cp = buf;
-
-	int match = 0;
-
-	while(cp < (buf + 1024)) {
-		getDIRFileName(dp, temp);
-		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
-			temp, dp->inode, dp->rec_len, dp->name_len);
-
-		printf("Names: %s\n", names[0]);
-		match = strEq(names[0], temp);
-
-		if(match) {
-			file = get_inode(devId, dp->inode);
-
-			if(dirsRemaining == 0) {
-				printf("Found file: %d\n", dp->inode);
-				printInode(file);
-				return dp->inode;
-			} else if(S_ISDIR(file->i_mode)) {
-				printf("Entering dir: %s\n", names[1]);
-				return search(devId, names + 1, dirsRemaining - 1, dp->inode);
-			} else {
-				printf("Invalid path\n");
-			}
-		}
-
-		cp += dp->rec_len;
-		dp = (SHUTUP)cp;        // pull dp along to the next record
-	}
-
-	printf("File not found\n");
-	return 0;
-
-}*/
-
 int findName(char buf[], char name[]) {
 	char temp[BLKSIZE];
 	char *cp;
@@ -282,14 +212,14 @@ int ialloc(int devId) {
 	char buf[BLKSIZE];
 
 	// read inode_bitmap block
-	get_block(getFD(devId), getIMap(devId), buf);
+	get_block(devId, getIMap(devId), buf);
 
 	for (i=0; i < getNInodes(devId); i++){
 		if (tst_bit(buf, i)==0){
 			 set_bit(buf,i);
 			 updateFreeInodes(devId, 1);
 
-			 put_block(getFD(devId), getIMap(devId), buf);
+			 put_block(devId, getIMap(devId), buf);
 
 			 return i+1;
 		}
@@ -304,14 +234,14 @@ int balloc(int devId) {
 	char buf[BLKSIZE];
 
 	// read block_bitmap block
-	get_block(getFD(devId), getBMap(devId), buf);
+	get_block(devId, getBMap(devId), buf);
 
 	for (i=0; i < getNBlocks(devId); i++){
 		if (tst_bit(buf, i)==0){
 			set_bit(buf,i);
 			updateFreeBlocks(devId, 1);
 
-			put_block(getFD(devId), getBMap(devId), buf);
+			put_block(devId, getBMap(devId), buf);
 
 			 return i+1;
 		}
@@ -326,12 +256,12 @@ int idealloc(int devId, int ino) {
 	char buf[BLKSIZE];
 
 	// read inode_bitmap block
-	get_block(getFD(devId), getIMap(devId), buf);
+	get_block(devId, getIMap(devId), buf);
 			 
 	set_bit(buf,i);
 	updateFreeInodes(devId, -1);
 
-	put_block(getFD(devId), getIMap(devId), buf);
+	put_block(devId, getIMap(devId), buf);
 
 	return 0;
 }
@@ -341,12 +271,12 @@ int bdealloc(int devId, int bno) {
 	char buf[BLKSIZE];
 
 	// read block_bitmap block
-	get_block(getFD(devId), getBMap(devId), buf);
+	get_block(devId, getBMap(devId), buf);
 			 
 	clr_bit(buf,i - 1); //Account for indexing starting at 1
 	updateFreeBlocks(devId, -1);
 
-	put_block(getFD(devId), getBMap(devId), buf);
+	put_block(devId, getBMap(devId), buf);
 	
 	return 0;
 }
