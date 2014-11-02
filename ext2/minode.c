@@ -20,6 +20,17 @@ void initMINODE() {
 	}
 }
 
+int firstMINODESlot() {
+	int i = 0;
+	for(; i < NMINODES; i++) {
+		if(minodes[i]->ino == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+
 MINODE *iget(int devId, int ino) {
 	/*
 		Once you have the ino of an inode, you may load the inode into a slot
@@ -207,6 +218,33 @@ void printAllMINodes() {
 		}
 	}
 	printf("\n##########  End MINODEs  ##########\n\n");
+}
+
+MINODE *newMINODE() {
+	int slot = firstMINODESlot();
+	if(slot < 0) {
+		return NULL;
+	}
+	minodes[slot]->refCount++;
+	return minodes[slot];
+}
+
+/* Duplicates setting for setting up a folder or a directory, NOT to be used instead of the dupme minode. this should only be used for mkdir and creat */
+MINODE *dupMINODE(MINODE *dupme) {
+	int slot = firstMINODESlot();
+	if(slot < 0) {
+		return NULL;
+	}
+
+	MINODE *dupped = minodes[slot];
+	dupped->INODE = dupme->INODE;
+	dupped->dev = dupme->dev;
+	dupped->ino = dupme->ino;
+	dupped->refCount = 1;
+	dupped->mounted = dupme->mounted;
+	dupped->mountptr = dupme->mountptr;
+
+	return dupped;
 }
 
 void closeAll() {

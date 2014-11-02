@@ -12,6 +12,9 @@ int iput(MINODE *mip);
 int findmyname(MINODE *parent, int myino, char *myname);
 int findino(MINODE *mip, int myino, int parentino);
 void printMINode(MINODE *mip);
+void printAllMINodes();
 void closeAll();
+MINODE *newMINODE();
+MINODE *dupMINODE(MINODE *dupme);
 
 #endif

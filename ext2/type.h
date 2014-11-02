@@ -50,6 +50,10 @@ DIR   *dp;
 #define NPROC            10
 #define NFD              10
 
+// i_block indexs
+#define SINGLEINDIRECT   13
+#define DBLINDIRECT      14
+#define TRIPLEINDIRECT   15
 
 // Open File Table
 typedef struct oft{

@@ -2,6 +2,9 @@
 #include "utility.h"
 #include "proc.h"
 #include "fileops.h"
+#include "minode.h"
+#include "rm.c"
+#include "mk.c"
 
 char line[128], cmd[32], pathname[64];
 extern PROC *running;
@@ -27,21 +30,16 @@ int main() {
 		}
 
 		printf("CMD: %s PATH: %s\n", cmd, pathname);
-		if (strEq(cmd, "ls")) {
-			ls(pathname);
-		} else if (strEq(cmd, "cd")) {
-			cd(pathname);
-		} else if (strEq(cmd, "pwd")) {
-			pwd(running->cwd);
-		} else if (strEq(cmd, "quit") || strEq(cmd, "q")) {
-			quit(); // write back any dirty in-memory INODE; exit(0);
+		if(strEq(cmd, "quit") || strEq(cmd, "q")) {
+			quit();
 			exit(0);
-		} else if(strEq(cmd, "procs")) {
-			printAllProcs();
-		} else if(strEq(cmd, "minodes")) {
-			printAllMINodes();
-		} else if(strEq(cmd, "mounts")) {
-			printAllMounts();
+		}
+
+		int func = functionLookup(cmd);
+		if(!func) {
+			printf("bash: %s: command not found\n", cmd);
+		} else {
+			execcmd(func, pathname);
 		}
 	}
 }
@@ -65,4 +63,25 @@ int getPath(char *line) {
 	}
 
 	free(copy); //free unneeded memory
+}
+
+int functionLookup(char *cmd) {
+	char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", 0};
+	int i = 0;
+
+	while(cmds[i] != NULL) {
+		if(!strcmp(cmd, cmds[i])) {
+			return i + 1;
+		}
+		i++;
+	}
+	return 0;
+}
+
+int execcmd(int cmd, char *path) {
+	cmd--;
+	
+	void (*fptr[])(char*) = {ls, pwd, cd, mymkdir, myrmdir, mycreat, printAllProcs, printAllMINodes, printAllMounts};
+
+	(*fptr[cmd])(path);
 }
