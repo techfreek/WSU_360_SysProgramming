@@ -131,6 +131,17 @@ int iput(MINODE *mip) {
 	return;
 }
 
+int isActive(int ino, int devId) {
+	int i = 0;
+	int dev = getDev(devId);
+	for(; i < NMINODES; i++) {
+		if(minodes[i]->ino == ino & minodes[i]->dev == dev) {
+			return 1;
+		}
+	}
+	return 0;	
+}
+
 int findmyname(MINODE *parent, int myino, char *myname) {
 	/*
 		Given the parent DIR (MINODE pointer) and myino, this function finds 

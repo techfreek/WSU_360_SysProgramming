@@ -11,10 +11,13 @@ MINODE *iget(int devId, int ino);
 int iput(MINODE *mip);
 int findmyname(MINODE *parent, int myino, char *myname);
 int findino(MINODE *mip, int myino, int parentino);
+int isActive(int ino, int devId);
 void printMINode(MINODE *mip);
 void printAllMINodes();
 void closeAll();
 MINODE *newMINODE();
 MINODE *dupMINODE(MINODE *dupme);
+
+
 
 #endif

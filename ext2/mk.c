@@ -8,7 +8,20 @@
 #include "minode.h"
 
 int mycreat(char *path) {
+	char *bname = bbasename(path);
+	int ino = getino(running->cwdDevId, running->cwd.ino, bname);
+	
+	MINODE *parent = iget(ino, running->cwdDevId);
 
+	if(S_ISDIR(parent.INODE.i_mode)) {
+		printf("Creating a file\n");
+		/*
+			add name to parent
+			create inode (allocate inode)
+		*/
+	} else {
+		printf("Invalid path\n");
+	}
 }
 
 int mymkdir(char *path) {
@@ -30,7 +43,9 @@ int doesChildExist(MINODE  *parent, char *childname) {
 }
 
 int insertChild(MINODE *parent, MINODE *child) {
-	
+	/*
+		Insert child DIR struct into parent blocks
+	*/	
 }
 
 #endif

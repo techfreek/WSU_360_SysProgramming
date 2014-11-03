@@ -104,8 +104,19 @@ int tokenize(char *path, char names[64][128]) {
 }
 
 char* bdirname(const char* path) {
-	char* copy = strdup(path);
-	char* temp = NULL;
+	char *copy = strdup(path);
+	char *temp = NULL;
+
+	char *end = strrchr(copy, '/');
+	int i;
+	if(end != NULL) {
+		i = end - copy;
+		*end = 0; //null terminate at specified character
+		return copy;
+	} else {
+		return null;
+	}
+
 	printf("Dirname() not implemented yet\n");
 }
 
