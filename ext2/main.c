@@ -6,6 +6,8 @@
 #include "rm.c"
 #include "mk.c"
 
+
+char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", 0};
 char line[128], cmd[32], pathname[64];
 extern PROC *running;
 extern MINODE *root;
@@ -13,12 +15,17 @@ char *diskimage = "fdimage";
 
 int main() {
 	fs_init(diskimage);   // initialize FS data structures
-
+	int i = 0;
 	while(1){ 
 		// ask for a command LINE; extract cmd, pathname from line:
 
 
-		printf("Command: ");
+		printf("Command [");
+		for(i = 0; cmds[i] != NULL; i++) {
+			printf(" %s |", cmds[i]);
+		}
+		printf("]: ");
+
 		fgets(line, 128, stdin);
 		line[strlen(line)-1] = 0;  // kill the \n char at end
 
@@ -66,7 +73,6 @@ int getPath(char *line) {
 }
 
 int functionLookup(char *cmd) {
-	char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", 0};
 	int i = 0;
 
 	while(cmds[i] != NULL) {
