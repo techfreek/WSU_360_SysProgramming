@@ -8,7 +8,7 @@
 
 
 char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", 0};
-char line[128], cmd[32], pathname[64];
+char line[128], cmd[32], pathname[64], params[128];
 extern PROC *running;
 extern MINODE *root;
 char *diskimage = "fdimage";
@@ -72,6 +72,19 @@ int getPath(char *line) {
 	free(copy); //free unneeded memory
 }
 
+int getParams(char *line) {
+	char *copy = strdup(line);
+	strtok(copy, " ");
+	strtok(NULL, " ");
+	char *temp = strtok(NULL, " ");
+	
+	if(temp) {
+		strcpy(params, temp);
+	} else {
+		params[0] = 0;
+	}
+	free(copy);
+}
 int functionLookup(char *cmd) {
 	int i = 0;
 
