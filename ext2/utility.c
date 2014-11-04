@@ -78,10 +78,31 @@ void put_block(int devId, int blk, char buf[]) {
 /* used to look up the block via the inode */
 INODE* get_inode(int devId, int ino) {
 	char buf[BLKSIZE];
-	int blockNum = ((ino - 1) / 8) + getIBlk(devId);
-	int block = (ino - 1) % 8;
+	get_block(devId, getBlockNum(ino, devId), buf);
+	return (INODE*)buf + getBlock(ino, devI);//Skip past the nodes we don't need
+}
+
+int getBlockNum(int ino, int devId) {
+	//Mail mans algorithm!
+	return ((ino - 1) / 8) + getIBLK(devId);
+}
+
+int getBlock(int ino, int devId) {
+	return (ino - 1) % 8;
+}
+
+void put_inode(int devId, int ino, INODE *inode) {
+	//Get block
+	//Overwrite where inode should be
+	//write back
+	char buf[BLKSIZE];
+	char *cp;
+	int blockNum = getBlockNum(ino, devId);
+	int block = getBlock(ino, devId);
 	get_block(devId, blockNum, buf);
-	return (INODE*)buf + block;//Skip past the nodes we don't need
+	cp = buf + (block * sizeof(INODE));
+	cp = (char *)inode;
+	put_block(devId, blockNum, buf);
 }
 
 int tokenize(char *path, char names[64][128]) {

@@ -1,0 +1,30 @@
+to hardlink files
+create a DIR entry in the new location with the ino pointing to the original
+incrememnts the links count
+
+steps:
+	get oldFileName inode into memory (minode)
+	make sure it is not a dir
+	make sure the dirname of newFileName exists but not basename also make sure they are on the same disk
+	then add entry to the datablock of the dir which has the inode point at the existing inode
+	then increment i_links_count of inode by 1
+	write to disk
+
+symbolic link
+	verify file (ex: /a/b/c) to be linked to exists
+	create a new file (ex /x/y/z)
+	change /x/y/z's type to LNK
+	write the name of existing file into i_block
+	write new inode to disk
+	
+readlink pathname: return the content of the symlink file
+	get INODE of pathname into a minode
+	check INODE is a symbolic link file
+	return it's string contents in INODE.i_block[]
+
+make shell scripts to make running and testing easier
+	ex printing:
+		mount -o loop disk A
+		ls -fl A
+		umount A
+		
