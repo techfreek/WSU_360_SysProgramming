@@ -108,7 +108,7 @@ int list_dir(MINODE* mip) {
 	char *cp;
 
 	int i = 0, devId = getDevID(mip->dev);
-	for(; (i < 12) && (ip->i_block[i] > 0); i++) { //If a directory needs to start using indirect blocks to store its files, something is wrong
+	for(; (i < SINGLEINDIRECT) && (ip->i_block[i] > 0); i++) { //If a directory needs to start using indirect blocks to store its files, something is wrong
 		get_block(devId, ip->i_block[i], buf);
 		dp = (DIR *)buf;
 		cp = buf;

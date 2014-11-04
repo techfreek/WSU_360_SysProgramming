@@ -261,5 +261,5 @@ MINODE *dupMINODE(MINODE *dupme) {
 void closeAll() {
 	//clears Minode table and
 	//Writes back all dirty blocks
-
+	printf("Closing MINODES not implemented yet...\n");
 }

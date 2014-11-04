@@ -227,12 +227,12 @@ int ialloc(int devId) {
 
 	for (i=0; i < getNInodes(devId); i++){
 		if (tst_bit(buf, i)==0){
-			 set_bit(buf,i);
-			 updateFreeInodes(devId, 1);
+			set_bit(buf,i);
+			updateFreeInodes(devId, 1);
 
-			 put_block(devId, getIMap(devId), buf);
+			put_block(devId, getIMap(devId), buf);
 
-			 return i+1;
+			return i+1;
 		}
 	}
 	
@@ -254,7 +254,7 @@ int balloc(int devId) {
 
 			put_block(devId, getBMap(devId), buf);
 
-			 return i+1;
+			return i+1;
 		}
 	}
 	
