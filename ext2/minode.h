@@ -14,6 +14,7 @@ int findino(MINODE *mip, int myino, int parentino);
 int isActive(int ino, int devId);
 void printMINode(MINODE *mip);
 void printAllMINodes();
+int touch(MINODE *mip);
 void closeAll();
 MINODE *newMINODE();
 MINODE *dupMINODE(MINODE *dupme);

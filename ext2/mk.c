@@ -26,7 +26,7 @@ int mycreat(char *path) {
 
 }
 
-int mymkdir(char *path) {
+int make_dir(char *path) {
 	char *bname = bbasename(path);
 	char *name = bdirname(path);
 
@@ -34,49 +34,57 @@ int mymkdir(char *path) {
 	
 	MINODE *parent = iget(ino, running->cwdDevId);
 
-	if(S_ISDIR(parent.INODE.i_mode)) {
-		printf("Creating a dir\n");
-		int nino = ialloc();
-		int nbno = balloc();
-	
-		if(!nino || !nbno) {
-			printf("No INOs or BNOs remaining.\n");
-			iput(parent);
-			return;
+	if(S_ISDIR(parent.INODE.i_mode) && !childExist(parent, name)) {
+		if(mymkdir(parent, name)) { //mymkdir will return 1 on success
+			parent->dirty++;
+			parent->INODE.i_links_count++;
+
+			touch(parent);
 		}
-	
-		MINODE *nChild = dupMINODE(parent); //So I get basic settings copied over
-		nChild->ino = nino;
-		nChild->i_block[0] = nbno;
-		
-		INODE *cInode = get_inode(getDevId(nChild->dev), nChild->ino);
-		cInode->i_mode = DIR_MODE;
-		cInode->i_uid = running->uid;
-		cInode->size = BLKSIZE;	
-		time(&cInode->i_atime);
-		time(&cInode->i_ctime);
-		time(&cInode->i_mtime);
-		time(&cInode->i_dtime);
-		cInode->i_gid = running->gid;
-		cInode->i_links_count = 2;
-		
-		put_inode(getDevId(nChild->dev), nChild->ino, cInode);
-		
-		insertChild(parent, child, name);
-		printf("Directory created\n");		
-		/*
-			add name to parent
-			create inode (allocate inode)
-		*/
-	} else {
-		printf("Invalid path\n");
 	}
 
-	iput(parent);
-
+	i_put(parent);
 }
 
-int doesChildExist(MINODE  *parent, char *childname) {
+int mymkdir(MINODE *parent, char *name) {
+	/*
+		add name to parent
+		create inode (allocate inode)
+	*/
+
+	printf("Creating a dir\n");
+	int nino = ialloc();
+	int nbno = balloc();
+
+	if(!nino || !nbno) {
+		printf("No INOs or BNOs remaining.\n");
+		iput(parent);
+		return 0;
+	}
+
+	MINODE *nChild = dupMINODE(parent); //So I get basic settings copied over
+	nChild->ino = nino;
+	nChild->i_block[0] = nbno;
+	
+	INODE *cInode = get_inode(getDevId(nChild->dev), nChild->ino);
+	cInode->i_mode = DIR_MODE;
+	cInode->i_uid = running->uid;
+	cInode->size = BLKSIZE;	
+	time(&cInode->i_atime);
+	time(&cInode->i_ctime);
+	time(&cInode->i_mtime);
+	time(&cInode->i_dtime);
+	cInode->i_gid = running->gid;
+	cInode->i_links_count = 2;
+	
+	put_inode(getDevId(nChild->dev), nChild->ino, cInode);
+	
+	insertChild(parent, child, name);
+	printf("Directory created\n");
+	return 1;
+}
+
+int childExists(MINODE  *parent, char *childname) {
 	int i = 0;
 	INODE pInode = parent->INODE;
 	char buf[BLKSIZE];	

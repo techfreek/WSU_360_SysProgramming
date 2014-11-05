@@ -30,7 +30,6 @@ int firstMINODESlot() {
 	return -1;
 }
 
-
 MINODE *iget(int devId, int ino) {
 	/*
 		Once you have the ino of an inode, you may load the inode into a slot
@@ -257,6 +256,11 @@ MINODE *dupMINODE(MINODE *dupme) {
 
 	return dupped;
 }
+
+int touch(MINODE *mip) {
+	time(&mip->INODE.i_atime);
+}
+
 
 void closeAll() {
 	//clears Minode table and
