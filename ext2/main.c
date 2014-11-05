@@ -21,9 +21,10 @@ int main() {
 
 
 		printf("Command [");
-		for(i = 0; cmds[i] != NULL; i++) {
-			printf(" %s |", cmds[i]);
+		for(i = 0; cmds[i + 1] != NULL; i++) {
+			printf("%s|", cmds[i]);
 		}
+		printf("%s", cmds[i]);
 		printf("]: ");
 
 		fgets(line, 128, stdin);
@@ -36,7 +37,7 @@ int main() {
 			continue;
 		}
 
-		printf("CMD: %s PATH: %s\n", cmd, pathname);
+		printf("CMD: %s PATH: %s PARAMS: %s\n", cmd, pathname, params);
 		if(strEq(cmd, "quit") || strEq(cmd, "q")) {
 			quit();
 			exit(0);
@@ -100,7 +101,7 @@ int functionLookup(char *cmd) {
 int execcmd(int cmd, char *path) {
 	cmd--;
 	
-	void (*fptr[])(char*) = {ls, pwd, cd, mymkdir, myrmdir, mycreat, printAllProcs, printAllMINodes, printAllMounts};
+	void (*fptr[])(char*) = {ls, pwd, cd, make_dir, myrmdir, mycreat, printAllProcs, printAllMINodes, printAllMounts, make_dir};
 
 	(*fptr[cmd])(path);
 }

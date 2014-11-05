@@ -28,7 +28,7 @@ int myrmdir(char *path) {
 
 	if(S_ISDIR(dir->i_mode)) {
 		int links = dir->i_links_count;
-		int busy = isActive(ino, running->cwdDevId);
+		int busy = isActive(ino, running->cwd->dev);
 		/*
 			if links == 2 and !busy, 
 				if directory is empty

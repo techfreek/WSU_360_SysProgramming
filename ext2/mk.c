@@ -5,7 +5,7 @@ extern MINODE *root;
 
 int mycreat(char *path) {
 	char *bname = bbasename(path);
-	int ino = getino(running->cwdDevId, running->cwd->ino, bname);
+	int ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
 	
 	MINODE *parent = iget(ino, running->cwdDevId);
 
@@ -23,23 +23,35 @@ int mycreat(char *path) {
 }
 
 int make_dir(char *path) {
+	printf("make_dir\n");
 	char *bname = bbasename(path);
 	char *name = bdirname(path);
-
-	int ino = getino(running->cwdDevId, running->cwd->ino, bname);
+	int ino = running->cwd->ino; //by default the ino is the current dir
+	if(bname) {
+		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
+	}
 	
-	MINODE *parent = iget(ino, running->cwdDevId);
+	MINODE *parent = iget(getDevID(running->cwd->dev), ino);
+
+	printf("New File parent:\n");
+	printMINode(parent);
+
+	printf("New dir name: %s \n", name);
 
 	if(S_ISDIR(parent->INODE.i_mode) && !childExists(parent, name)) {
+		printf("got parent of to-be directory\n");
 		if(mymkdir(parent, name)) { //mymkdir will return 1 on success
 			parent->dirty++;
 			parent->INODE.i_links_count++;
 
 			touch(parent);
 		}
+	} else {
+		printf("Invalid path\n");
 	}
 
 	iput(parent);
+	return;
 }
 
 int mymkdir(MINODE *parent, char *name) {
@@ -47,7 +59,7 @@ int mymkdir(MINODE *parent, char *name) {
 		add name to parent
 		create inode (allocate inode)
 	*/
-	printf("Creating a dir\n");
+	printf("Creating a dir on dev %d devId %d\n", parent->dev, getDevID(parent->dev));
 	int nino = ialloc(getDevID(parent->dev));
 	int nbno = balloc(getDevID(parent->dev));
 
@@ -57,9 +69,13 @@ int mymkdir(MINODE *parent, char *name) {
 		return 0;
 	}
 
+	printf("Making new minode\n");
+
 	MINODE *nChild = dupMINODE(parent); //So I get basic settings copied over
 	nChild->ino = nino;
 	
+	printf("Initiazing new dir\n");
+
 	INODE *cInode = get_inode(getDevID(nChild->dev), nChild->ino);
 	cInode->i_block[0] = nbno;
 	cInode->i_mode = DIR_MODE;

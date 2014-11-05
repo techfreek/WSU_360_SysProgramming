@@ -128,17 +128,20 @@ char* bdirname(const char* path) {
 	char *copy = strdup(path);
 	char *temp = NULL;
 
-	char *end = strrchr(copy, '/');
-	int i;
-	if(end != NULL) {
-		i = end - copy;
-		*end = 0; //null terminate at specified character
+	char *bNameExists = strchr(path, '/'); //so we don't return the dir name as the basename
+	if(!bNameExists) {
 		return copy;
 	} else {
-		return NULL;
+		char *end = strrchr(copy, '/');
+		int i;
+		if(end != NULL) {
+			i = end - copy;
+			*end = 0; //null terminate at specified character
+			return copy;
+		} else {
+			return NULL;
+		}
 	}
-
-	printf("Dirname() not implemented yet\n");
 }
 
 char* bbasename(const char* path) {
@@ -149,13 +152,16 @@ char* bbasename(const char* path) {
 	if(strlen(path) == 0) { //Make sure I don't pass in nothing and crash
 		return 0;
 	} else {
-		temp = strtok(copy, "/");
+		char *bNameExists = strchr(path, '/'); //so we don't return the dir name as the basename
+		if(bNameExists) {
+			temp = strtok(copy, "/");
 
-		while(temp != NULL) {
-			basename = temp;
-			temp = strtok(NULL, "/");
+			while(temp != NULL) {
+				basename = temp;
+				temp = strtok(NULL, "/");
+			}
+			free(copy);
 		}
-		free(copy);
 		return basename; //returns total number of levels to traverse
 	}
 }
@@ -170,6 +176,10 @@ int getino(int devId, int startIno, char *pathname) {
 	int numNames, rootDirBlock, targetINO = 0;
 	//INODE* file;
 	//rootDirBlock = 	firstIBlock();
+
+	if(pathname[0] == '/') { //start from root
+		startIno = 2;
+	}
 
 	numNames = tokenize(pathname, names);
 
@@ -350,15 +360,15 @@ int updateFreeInodes(int devId, int delta) {
 	char buf[BLKSIZE];
 
 	// dec free inodes count in SUPER and GD
-	get_block(getFD(devId), 1, buf);
+	get_block(devId, 1, buf);
 	sp = (SUPER *)buf;
 	sp->s_free_inodes_count + delta;
-	put_block(getFD(devId), 1, buf);
+	put_block(devId, 1, buf);
 
-	get_block(getFD(devId), 2, buf);
+	get_block(devId, 2, buf);
 	gp = (GD *)buf;
 	gp->bg_free_inodes_count + delta;
-	put_block(getFD(devId), 2, buf);
+	put_block(devId, 2, buf);
 }
 
 //Pass 1 to increase by 1, -1 to decrease by 1, etc
@@ -366,15 +376,15 @@ int updateFreeBlocks(int devId, int delta) {
 	char buf[BLKSIZE];
 
 	// update free block count in SUPER and GD
-	get_block(getFD(devId), 1, buf);
+	get_block(devId, 1, buf);
 	sp = (SUPER *)buf;
 	sp->s_free_blocks_count + delta;
-	put_block(getFD(devId), 1, buf);
+	put_block(devId, 1, buf);
 
-	get_block(getFD(devId), 2, buf);
+	get_block(devId, 2, buf);
 	gp = (GD *)buf;
 	gp->bg_free_blocks_count + delta;
-	put_block(getFD(devId), 2, buf);
+	put_block(devId, 2, buf);
 }
 
 void printInode(INODE* ip) {

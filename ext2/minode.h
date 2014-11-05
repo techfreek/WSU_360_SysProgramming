@@ -11,7 +11,7 @@ MINODE *iget(int devId, int ino);
 int iput(MINODE *mip);
 int findmyname(MINODE *parent, int myino, char *myname);
 int findino(MINODE *mip, int myino, int parentino);
-int isActive(int ino, int devId);
+int isActive(int ino, int dev);
 void printMINode(MINODE *mip);
 void printAllMINodes();
 int touch(MINODE *mip);
