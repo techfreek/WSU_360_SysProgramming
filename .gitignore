@@ -1,6 +1,7 @@
 .out
 .tmp
 .e
+*.swp
 lab2/lab2
 lab2pre/output
 lab
