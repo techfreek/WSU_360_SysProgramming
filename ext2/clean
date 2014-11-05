@@ -1,0 +1,4 @@
+#! /usr/bin/fish
+
+rm lab
+echo "Project Cleaned"

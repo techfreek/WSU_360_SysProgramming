@@ -132,7 +132,7 @@ int iput(MINODE *mip) {
 
 int isActive(int ino, int devId) {
 	int i = 0;
-	int dev = getDev(devId);
+	int dev = getFD(devId);
 	for(; i < NMINODES; i++) {
 		if(minodes[i]->ino == ino & minodes[i]->dev == dev) {
 			return 1;

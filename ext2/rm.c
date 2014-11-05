@@ -1,18 +1,10 @@
-#ifndef rm_c
-#define rm_c
-
-#include "proc.h"
-#include "type.h"
-#include "utility.h"
-#include "fileops.h"
-#include "minode.h"
-#include "mk.c"
+#include "rm.h"
 
 extern PROC *running;
 extern MINODE *root;
 
 int myunlink(char *path) {
-	/*int ino = getino(running->cwdDevId, running->cwd.ino, path);
+	/*int ino = getino(running->cwdDevId, running->cwd->ino, path);
 	
 	INODE *file = get_inode(running->cwdDevId, ino);
 
@@ -27,8 +19,8 @@ int myunlink(char *path) {
 	return;
 }
 
-int  myrmdir(char *path) {
-	int ino = getino(running->cwdDevId, running->cwd.ino, path);
+int myrmdir(char *path) {
+	int ino = getino(running->cwdDevId, running->cwd->ino, path);
 	
 	INODE *dir = get_inode(running->cwdDevId, ino);
 	
@@ -57,6 +49,7 @@ int  myrmdir(char *path) {
 int removechild(int ino, int devId) {
 	int i = 0;
 	INODE *ip = get_inode(devId, ino);
+	char buf[BLKSIZE];
 	char *cp, *pp;
 	DIR *child;
 
@@ -80,9 +73,8 @@ int removechild(int ino, int devId) {
 }
 
 char* inodeExists(int ino, char buf[], char **pp) {
-	int i = 0;
+	/*int i = 0;
 	INODE pInode = parent->INODE;
-	char buf[BLKSIZE];
 	char *cp;
 	DIR *dp;
 
@@ -97,8 +89,6 @@ char* inodeExists(int ino, char buf[], char **pp) {
 		cp += dp->rec_len;
 		dp = (SHUTUP)cp;
 	}
+	return NULL;*/
 	return NULL;
 }
-
-
-#endif

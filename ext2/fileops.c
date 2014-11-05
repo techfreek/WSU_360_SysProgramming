@@ -77,11 +77,11 @@ int list_file(MINODE* mip, char* name) {
 	(S_IWOTH & ip->i_mode) ? printf("w") : printf("-");
 	(S_IXOTH & ip->i_mode) ? printf("x") : printf("-");
 
-	char time[NNAME];
-	strcpy(time, ctime(&ip->i_ctime));
-	time[strlen(time) - 1] = 0;
+	char timestr[NNAME];
+	strcpy(timestr, ctime(&ip->i_ctime));
+	timestr[strlen(timestr) - 1] = 0;
 
-	printf("%3d %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, time, name);
+	printf("%3d %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, timestr, name);
 	if(S_ISLNK(ip->i_mode)) {
 		printf(" -> %s\n", (char *)ip->i_block);
 	} else {

@@ -79,12 +79,12 @@ void put_block(int devId, int blk, char buf[]) {
 INODE* get_inode(int devId, int ino) {
 	char buf[BLKSIZE];
 	get_block(devId, getBlockNum(ino, devId), buf);
-	return (INODE*)buf + getBlock(ino, devI);//Skip past the nodes we don't need
+	return (INODE*)buf + getBlock(ino, devId);//Skip past the nodes we don't need
 }
 
 int getBlockNum(int ino, int devId) {
 	//Mail mans algorithm!
-	return ((ino - 1) / 8) + getIBLK(devId);
+	return ((ino - 1) / 8) + getIBlk(devId);
 }
 
 int getBlock(int ino, int devId) {
@@ -135,7 +135,7 @@ char* bdirname(const char* path) {
 		*end = 0; //null terminate at specified character
 		return copy;
 	} else {
-		return null;
+		return NULL;
 	}
 
 	printf("Dirname() not implemented yet\n");

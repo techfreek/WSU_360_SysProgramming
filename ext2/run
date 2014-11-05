@@ -1,0 +1,8 @@
+#! /usr/bin/fish
+
+cp disk_backup disk
+./lab
+#mount -o loop /mnt
+ls
+#umount /mnt
+rm disk

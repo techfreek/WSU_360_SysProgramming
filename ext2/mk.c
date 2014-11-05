@@ -1,19 +1,15 @@
-#ifndef mk_c
-#define mk_c
+#include "mk.h"
 
-#include "type.h"
-#include "utility.h"
-#include "proc.h"
-#include "fileops.h"
-#include "minode.h"
+extern PROC *running;
+extern MINODE *root;
 
 int mycreat(char *path) {
 	char *bname = bbasename(path);
-	int ino = getino(running->cwdDevId, running->cwd.ino, bname);
+	int ino = getino(running->cwdDevId, running->cwd->ino, bname);
 	
 	MINODE *parent = iget(ino, running->cwdDevId);
 
-	if(S_ISDIR(parent.INODE.i_mode)) {
+	if(S_ISDIR(parent->INODE.i_mode)) {
 		printf("Creating a file\n");
 		/*
 			add name to parent
@@ -30,11 +26,11 @@ int make_dir(char *path) {
 	char *bname = bbasename(path);
 	char *name = bdirname(path);
 
-	int ino = getino(running->cwdDevId, running->cwd.ino, bname);
+	int ino = getino(running->cwdDevId, running->cwd->ino, bname);
 	
 	MINODE *parent = iget(ino, running->cwdDevId);
 
-	if(S_ISDIR(parent.INODE.i_mode) && !childExist(parent, name)) {
+	if(S_ISDIR(parent->INODE.i_mode) && !childExists(parent, name)) {
 		if(mymkdir(parent, name)) { //mymkdir will return 1 on success
 			parent->dirty++;
 			parent->INODE.i_links_count++;
@@ -43,7 +39,7 @@ int make_dir(char *path) {
 		}
 	}
 
-	i_put(parent);
+	iput(parent);
 }
 
 int mymkdir(MINODE *parent, char *name) {
@@ -53,8 +49,8 @@ int mymkdir(MINODE *parent, char *name) {
 	*/
 
 	printf("Creating a dir\n");
-	int nino = ialloc();
-	int nbno = balloc();
+	int nino = ialloc(getDevID(parent->dev));
+	int nbno = balloc(getDevID(parent->dev));
 
 	if(!nino || !nbno) {
 		printf("No INOs or BNOs remaining.\n");
@@ -64,12 +60,12 @@ int mymkdir(MINODE *parent, char *name) {
 
 	MINODE *nChild = dupMINODE(parent); //So I get basic settings copied over
 	nChild->ino = nino;
-	nChild->i_block[0] = nbno;
 	
-	INODE *cInode = get_inode(getDevId(nChild->dev), nChild->ino);
+	INODE *cInode = get_inode(getDevID(nChild->dev), nChild->ino);
+	cInode->i_block[0] = nbno;
 	cInode->i_mode = DIR_MODE;
 	cInode->i_uid = running->uid;
-	cInode->size = BLKSIZE;	
+	cInode->i_size = BLKSIZE;	
 	time(&cInode->i_atime);
 	time(&cInode->i_ctime);
 	time(&cInode->i_mtime);
@@ -77,9 +73,9 @@ int mymkdir(MINODE *parent, char *name) {
 	cInode->i_gid = running->gid;
 	cInode->i_links_count = 2;
 	
-	put_inode(getDevId(nChild->dev), nChild->ino, cInode);
+	put_inode(getDevID(nChild->dev), nChild->ino, cInode);
 	
-	insertChild(parent, child, name);
+	insertChild(parent, nChild, name);
 	printf("Directory created\n");
 	return 1;
 }
@@ -134,7 +130,7 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 			printf("Now writing new entry\n");
 
 			nDir->rec_len = oldLength - dp->rec_len; //take up all the space left
-			np = (char*)nDir;
+			//---------------------------------------------------np = (char)nDir;
 			printf("Done writing new entry\n");
 
 			put_block(devId, ip->i_block[i], buf);
@@ -152,7 +148,7 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 		get_block(devId, nBlock, buf);
 
 		nDir->rec_len = BLKSIZE; //We will use the whole block
-		buf = (char*)nDir;
+		//---------------------------------------------------buf = (char)nDir;
 
 		put_block(devId, nBlock, buf); //write it back
 	} else {
@@ -189,5 +185,3 @@ int isIdeal(DIR *dp) {
 int calcIdeal(int len) {
 	return 4 * ((8 + len + 3) / 4);
 }
-
-#endif

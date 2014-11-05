@@ -13,6 +13,7 @@ char* getMountName(int disk);
 int getNBlocks(int disk);
 int getNInodes(int disk);
 int getBMap(int disk);
+int getDevID(int fd);
 int getIMap(int disk);
 int getIBlk(int disk);
 void printAllMounts();

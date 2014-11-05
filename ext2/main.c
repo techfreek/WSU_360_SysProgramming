@@ -3,8 +3,8 @@
 #include "proc.h"
 #include "fileops.h"
 #include "minode.h"
-#include "rm.c"
-#include "mk.c"
+#include "rm.h"
+#include "mk.h"
 
 
 char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", 0};
