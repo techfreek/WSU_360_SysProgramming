@@ -84,6 +84,9 @@ int mymkdir(MINODE *parent, char *name) {
 	return 1;
 }
 
+//This scans through all i_blocks to see if the specified name exists
+//Returns 1 if it does
+//Returns 0 if it does not
 int childExists(MINODE  *parent, char *childname) {
 	int i = 0;
 	INODE pInode = parent->INODE;
