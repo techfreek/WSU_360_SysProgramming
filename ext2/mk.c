@@ -52,7 +52,7 @@ int mymkdir(MINODE *parent, char *name) {
 		create inode (allocate inode)
 	*/
 
-	printf("Creating a dir\n");
+	printf("This should create a dir\n");
 	int nino = ialloc();
 	int nbno = balloc();
 
