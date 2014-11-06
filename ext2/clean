@@ -1,4 +1,5 @@
-#! /usr/bin/fish
+#! /bin/bash
 
 rm lab
+rm fdimage
 echo "Project Cleaned"

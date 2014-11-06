@@ -100,8 +100,10 @@ void put_inode(int devId, int ino, INODE *inode) {
 	int blockNum = getBlockNum(ino, devId);
 	int block = getBlock(ino, devId);
 	get_block(devId, blockNum, buf);
-	cp = buf + (block * sizeof(INODE));
-	cp = (char *)inode;
+	INODE *dInode = buf + block;
+	
+	*dInode = *inode; //copy values over
+
 	put_block(devId, blockNum, buf);
 }
 

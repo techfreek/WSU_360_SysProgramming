@@ -119,6 +119,7 @@ int iput(MINODE *mip) {
 			if(minodes[i]->dirty) {
 				printf("inode is dirty, should write back\n");
 				//write all back
+				closeMinode(minodes[i]);
 			}
 			//clear all data
 			//minodes[i]->INODE = NULL;
@@ -264,5 +265,15 @@ int touch(MINODE *mip) {
 void closeAll() {
 	//clears Minode table and
 	//Writes back all dirty blocks
-	printf("Closing MINODES not implemented yet...\n");
+	//printf("Closing MINODES not implemented yet...\n");
+	int i = 0;
+	for(; i < NMINODES; i++) {
+		if(minodes[i]->dirty) {
+			closeMinode(minodes[i]);
+		}
+	}
+}
+
+void closeMinode(MINODE *mip) {
+	put_inode(getDevID(mip->dev), mip->ino, mip->INODE);
 }

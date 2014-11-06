@@ -125,7 +125,7 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 	INODE *ip = &parent->INODE;
 	char buf[BLKSIZE];
 	char *cp, *np;
-	DIR *dp, *nDir;
+	DIR *dp, *nDir = (DIR *)malloc(sizeof(DIR));
 
 
 
@@ -137,18 +137,24 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 	for(; (i < SINGLEINDIRECT) && (ip->i_block[i] != 0); i++) {
 		get_block(devId, ip->i_block[i], buf);
 		cp = getLastDir(buf);
-
+		
 		dp = (DIR *)cp;
 		if(!isIdeal(dp) && ((dp->rec_len - calcIdeal(dp->name_len)) >= nDir->rec_len)) {
+			printf("Found spot in i_block[%d]\n", i);
 			oldLength = dp->rec_len;
+			printf("DP size before: %d\n", dp->rec_len);
 			dp->rec_len = calcIdeal(dp->name_len);
-
+			printf("DP size after: %d\n", dp->rec_len);
+			
 			np = cp + dp->rec_len; //now points at where the new record will go
 			
 			printf("Now writing new entry\n");
 
 			nDir->rec_len = oldLength - dp->rec_len; //take up all the space left
-			//---------------------------------------------------np = (char)nDir;
+			
+			DIR *temp = (SHUTUP)np;
+			*temp = *nDir;
+
 			printf("Done writing new entry\n");
 
 			put_block(devId, ip->i_block[i], buf);
@@ -156,17 +162,23 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 		}
 		
 	}
+	if(i == SINGLEINDIRECT) {
+		printf("Simply amazing. I was able to fill up all direct blocks of a directory with DIR structs\n");
+		return 0;	
+	}
 
 	//No space before we ran out of partial/complete i_blocks
 	int nBlock = balloc(devId);
 	if(nBlock) {
+		printf("Creating new block for parent\n");
 		parent->dirty++;
 		parent->INODE.i_block[i] = nBlock; //new block!
 
 		get_block(devId, nBlock, buf);
 
 		nDir->rec_len = BLKSIZE; //We will use the whole block
-		//---------------------------------------------------buf = (char)nDir;
+		DIR *temp = (SHUTUP)buf;
+		*temp = *nDir; //copy values over;
 
 		put_block(devId, nBlock, buf); //write it back
 	} else {
