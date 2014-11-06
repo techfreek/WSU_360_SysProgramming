@@ -1,8 +1,8 @@
-#! /usr/bin/fish
+#! /bin/bash
 
 cp disk_backup fdimage
 ./lab
-#mount -o loop /mnt
-#ls
-#umount /mnt
+sudo mount -o loop fdimage /mnt
+ls -l /mnt
+umount /mnt
 rm fdimage
