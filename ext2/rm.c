@@ -29,23 +29,20 @@ int myrmdir(char *path) {
 	}
 	
 	MINODE *parent = iget(devId, ino);
-	//MINODE *target = iget(devId, getino(devId, parent->ino, name));
+	
+	printInode(&parent->INODE);
+
+	if(S_ISDIR(parent->INODE.i_mode)) { //see if we can move into it to find out more
+		int tino = childExists(parent, name);
+		if(!tino) {
+			printf("Specified folder does not exist\n");
+		}
+
+		INODE *targetInode = get_inode(devId, tino);
 
 
-	/*
-		Refactor such that parent is the directory containing the directory we want to delete 
-			ex if we want to delete a/b/c, parent is b, target is c
-		etc
-	*/
-
-
-	//int childIno = childExists(parent, name);
-
-	//INODE *childInode = get_inode(getDevID(parent->dev), childIno);
-
-	if(S_ISDIR(parent->INODE.i_mode)) {
-		int links = parent->INODE.i_links_count;
-		int busy = isActive(ino, running->cwd->dev);
+		int links = targetInode->i_links_count;
+		int busy = isActive(tino, running->cwd->dev);
 		/*
 			if links == 2 and !busy, 
 				if directory is empty
@@ -56,13 +53,14 @@ int myrmdir(char *path) {
 					???
 					profit		 
 		*/
-		if(links == 2 && !busy &&) { //see if we should continue
-			if(parent->INODE.i_uid == SUPER_USER || parent->INODE.i_uid == running->uid)  {
-				if(isEmptyDir(&parent->INODE, getDevID(parent->dev))) {
-					clearBlocks(&parent->INODE, getDevID(parent->dev));
-					idealloc(ino);
-
-
+		if(links == 2 && !busy) { //see if we should continue
+			if(targetInode->i_uid == SUPER_USER || targetInode->i_uid == running->uid)  {
+				list_file(targetInode, "Directory to be deleted");
+				printf("dir i_block[0] = %d\n", targetInode->i_block[0]);
+				if(isEmptyDir(&targetInode, devId)) {
+					clearBlocks(&targetInode, devId);
+					idealloc(devId, ino);
+					removechild(parent, tino, devId);
 				} else {
 					printf("Directory is not empty\n");
 					return 0;
@@ -72,6 +70,8 @@ int myrmdir(char *path) {
 				return 0;
 			}
 		} else {
+			if(links != 2) printf("This directory has %d links\n", links);
+			if(busy) printf("This directory is still being used\n");
 			printf("Could not delete directory\n");
 			return 0;
 		}
@@ -81,17 +81,17 @@ int myrmdir(char *path) {
 }
 
 
-int removechild(int ino, int devId) {
+int removechild(MINODE *parent, int ino, int devId) {
 	int i = 0;
-	INODE *ip = get_inode(devId, ino);
+	INODE *tp = get_inode(devId, ino);
 	char buf[BLKSIZE];
 	char *cp, *pp;
 	DIR *child, *prev;
 
-	for(; (i < SINGLEINDIRECT) && (ip->i_block[i] != 0); i++) {
-		get_block(devId, ip->i_block[i], buf);
+	for(; (i < SINGLEINDIRECT) && (parent->INODE.i_block[i] != 0); i++) {
+		get_block(devId, parent->INODE.i_block[i], buf);
 
-		if(cp = inodeExists(ino, buf, &pp)) { //this is intentional so we don't have to scan again
+		if(cp = inodeExists(parent, ino, buf, &pp)) { //this is intentional so we don't have to scan again
 			child = (SHUTUP)cp;
 			prev = (SHUTUP)pp;
 			/*
@@ -113,17 +113,19 @@ int removechild(int ino, int devId) {
 				last->rec_len += child->rec_len;
 				memcpy(cp, cp + child->rec_len, (BLKSIZE - child->rec_len));
 			}
+			put_block(devId, parent->INODE.i_block[i], buf);
 			return 1;
 		}
 	}
 	printf("Unknown problem removing file\n");
 }
 
-char* inodeExists(int ino, char buf[], char **pp) {
+char* inodeExists(MINODE *parent, int ino, char buf[], char **pp) {
 	int i = 0;
 	INODE pInode = parent->INODE;
 	char *cp;
 	DIR *dp;
+	
 
 	dp = (DIR *)buf;
 	cp = buf;
@@ -144,14 +146,19 @@ int isEmptyDir(INODE *ip, int devId) {
 	char *cp;
 	DIR *dp;
 	int first_rec_len = 0;
+	char name[NNAME];
 
-	get_block(devId, pInode.i_block[0], buf);
+	get_block(devId, ip->i_block[0], buf);
 	cp = buf;
 	dp = (SHUTUP)buf; //get '.'
+	getDIRFileName(dp, name);
+	printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
 	first_rec_len = dp->rec_len;
 
 	cp += dp->rec_len;
 	dp = (SHUTUP)buf;
+	getDIRFileName(dp, name);
+	printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
 	if(dp->rec_len + first_rec_len == BLKSIZE) {
 		return 1;
 	}

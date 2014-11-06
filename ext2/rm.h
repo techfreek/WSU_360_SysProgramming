@@ -11,7 +11,7 @@
 
 int myunlink(char *path);
 int myrmdir(char *path);
-char* inodeExists(int ino, char buf[], char **pp);
-int removechild(int ino, int devId);
+char* inodeExists(MINODE *parent, int ino, char buf[], char **pp);
+int removechild(MINODE *parent, int ino, int devId);
 
 #endif

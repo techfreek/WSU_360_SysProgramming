@@ -121,6 +121,7 @@ int list_dir(MINODE* mip) {
 			cip = iget(devId, dp->inode);
 			//printf("Opened %d\n", dp->inode);
 			list_file(&cip->INODE, name);
+			//getchar();
 			//printf("Closing %d\n", dp->inode);
 			iput(cip); //relase hold
 			cp += dp->rec_len;

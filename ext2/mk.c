@@ -87,16 +87,21 @@ int mymkdir(MINODE *parent, char *name) {
 	INODE *cInode = get_inode(getDevID(nChild->dev), nino);
 	cInode->i_block[0] = (u32)nbno;
 	cInode->i_mode = DIR_MODE;
-	cInode->i_uid = (u32)running->uid;
-	cInode->i_size = (u32)1024;	
-	cInode->i_atime = (u32)time(NULL);
-	cInode->i_ctime = (u32)time(NULL);
-	cInode->i_mtime = (u32)time(NULL);
-	cInode->i_dtime = (u32)time(NULL);
-	cInode->i_gid = (u32)running->gid;
-	cInode->i_links_count = 1;
-
+	cInode->i_uid = running->uid;
+	cInode->i_size = 1024;	
+	cInode->i_atime = time(NULL);
+	cInode->i_ctime = time(NULL);
+	cInode->i_mtime = time(NULL);
+	cInode->i_dtime = time(NULL);
+	cInode->i_gid = running->gid;
+	cInode->i_links_count = 2;
 	nChild->INODE = *cInode;
+
+	//insertChild(nChild, nChild, ".");
+	//insertChild(nChild, parent, "..");
+	initDir(nbno, getDevID(nChild->dev), parent->ino, nino);
+
+	printf("Directory i block: %d\n", nbno);
 
 	nChild->dirty++;
 
@@ -175,6 +180,38 @@ int childExists(MINODE  *parent, char *childname) {
 		}
 	} 
 	return 0;
+}
+
+int initDir(int bno, int devId, int pino, int ino) {
+	DIR *dot = (DIR *)malloc(sizeof(DIR)),
+		*dotdot = (DIR *)malloc(sizeof(DIR)),
+		*dp;
+
+	char buf[BLKSIZE];
+	char *cp;
+
+	get_block(devId, bno, buf);
+	cp = buf;
+
+	dot->inode = ino;
+	dot->rec_len = calcIdeal(1);
+	dot->name_len = 1;
+	strncpy(dot->name, ".", 1);
+
+	dotdot->inode = pino;
+	dotdot->rec_len = BLKSIZE - (dot->rec_len);
+	dotdot->name_len = 2;
+	strncpy(dotdot->name, "..", 2);
+
+	dp = (SHUTUP)buf;
+	*dp = *dot;
+	cp += dot->rec_len;
+
+	dp = (SHUTUP)cp;
+	*dp = *dotdot;
+
+	put_block(devId, bno, buf);
+
 }
 
 int insertChild(MINODE *parent, MINODE *child, char *name) {
