@@ -310,7 +310,7 @@ int idealloc(int devId, int ino) {
 	// read inode_bitmap block
 	get_block(devId, getIMap(devId), buf);
 			 
-	set_bit(buf,i);
+	clr_bit(buf,ino - 1);
 	updateFreeInodes(devId, -1);
 
 	put_block(devId, getIMap(devId), buf);
@@ -325,7 +325,7 @@ int bdealloc(int devId, int bno) {
 	// read block_bitmap block
 	get_block(devId, getBMap(devId), buf);
 			 
-	clr_bit(buf,i - 1); //Account for indexing starting at 1
+	clr_bit(buf, bno - 1); //Account for indexing starting at 1
 	updateFreeBlocks(devId, -1);
 
 	put_block(devId, getBMap(devId), buf);

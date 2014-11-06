@@ -11,6 +11,10 @@ int mycreat(char *path) {
 	if(bname) {
 		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
 	}
+
+	if(strlen(name) == 0) {
+		printf("Please enter a file name\n");
+	}
 	
 	MINODE *parent = iget(getDevID(running->cwd->dev), ino);
 
@@ -39,6 +43,11 @@ int make_dir(char *path) {
 		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
 	}
 	
+	if(strlen(name) == 0) {
+		printf("Please enter a name\n");
+		return 0;
+	}
+
 	MINODE *parent = iget(getDevID(running->cwd->dev), ino);
 
 	printf("New File parent:\n");
@@ -85,10 +94,10 @@ int mymkdir(MINODE *parent, char *name) {
 	printf("Initiazing new dir with inode %d\n", nino);
 
 	INODE *cInode = get_inode(getDevID(nChild->dev), nino);
-	cInode->i_block[0] = (u32)nbno;
+	cInode->i_block[0] = nbno;
 	cInode->i_mode = DIR_MODE;
 	cInode->i_uid = running->uid;
-	cInode->i_size = 1024;	
+	cInode->i_size = (u32)BLKSIZE;	
 	cInode->i_atime = time(NULL);
 	cInode->i_ctime = time(NULL);
 	cInode->i_mtime = time(NULL);
