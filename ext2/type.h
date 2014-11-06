@@ -24,7 +24,8 @@ INODE *ip;
 DIR   *dp; 
 
 #define BLOCK_SIZE     1024
-#define BLKSIZE 1024
+#define BLKSIZE 	   1024
+#define STRSIZE			256
 
 // Block number of EXT2 FS on FD
 #define SUPERBLOCK        1

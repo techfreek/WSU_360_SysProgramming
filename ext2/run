@@ -3,6 +3,6 @@
 cp disk_backup fdimage
 ./lab
 sudo mount -o loop fdimage /mnt
-ls -l /mnt
-umount /mnt
+sudo ls -fl /mnt
+sudo umount /mnt
 rm fdimage

@@ -65,7 +65,7 @@ int unMountDisk(int disk) {
 }
 
 int unmountAll() {
-	printf("Unmount all not implemented yet\n");
+	//printf("Unmount all not implemented yet\n");
 }
 
 int getFD(int disk) {

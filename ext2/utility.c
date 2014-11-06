@@ -91,18 +91,26 @@ int getBlock(int ino, int devId) {
 	return (ino - 1) % 8;
 }
 
-void put_inode(int devId, int ino, INODE *inode) {
+void put_inode(int devId, int ino, INODE *linode) {
 	//Get block
 	//Overwrite where inode should be
 	//write back
+	INODE backup = *linode;
 	char buf[BLKSIZE];
 	char *cp;
 	int blockNum = getBlockNum(ino, devId);
 	int block = getBlock(ino, devId);
+
 	get_block(devId, blockNum, buf);
-	INODE *dInode = buf + block;
+	INODE *dInode = (INODE*)buf + block;
 	
-	*dInode = *inode; //copy values over
+	//printf("Putting INODE: \n");
+	//printInode(&backup);
+
+	*dInode = backup; //copy values over
+
+	//printf("Updated INODE: \n");
+	//printInode(dInode);
 
 	put_block(devId, blockNum, buf);
 }
@@ -238,8 +246,8 @@ int findName(char buf[], char name[]) {
 		getDIRFileName(dp, temp);
 		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
 			temp, dp->inode, dp->rec_len, dp->name_len);
-		getchar();
-		printf("%s = %s ? = %d\n", name, temp, strEq(name, temp));
+		//getchar();
+		//printf("%s = %s ? = %d\n", name, temp, strEq(name, temp));
 		if(strEq(name, temp)) {
 			return dp->inode;
 		}

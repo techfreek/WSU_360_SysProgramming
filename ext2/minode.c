@@ -104,29 +104,26 @@ int iput(MINODE *mip) {
 		and write the block back to disk.
 	*/
 
-	int i = 0, found = 0;
+	/*int i = 0, found = 0;
 	for(i = 0; i < NMINODES; i++) {
 		if((minodes[i]->dev == mip->dev) && (minodes[i]->ino == mip->ino)) { //we found our MINODE
 			found++;
 			break;
 		}
-	}
-	if(found) {
-		if(minodes[i]->refCount > 1) { //don't delete, just decrement refcount
-			minodes[i]->refCount--;
-			printf("%d other users are still using ino = %d\n", minodes[i]->refCount, minodes[i]->ino);
-		} else {
-			if(minodes[i]->dirty) {
-				printf("inode is dirty, should write back\n");
-				//write all back
-				closeMinode(minodes[i]);
-			}
-			//clear all data
-			//minodes[i]->INODE = NULL;
-			//printf("Unmounting ino %d\n", mip->ino);
-			minodes[i]->mountptr = minodes[i]->dev = minodes[i]->ino = minodes[i]->refCount = minodes[i]->dirty = minodes[i]->mounted = 0; //clear ints
-			//Just set pointer to null cause we don't want to delete that pre-emptively
+	}*/
+	if(--mip->refCount) { //don't delete, just decrement refcount
+		printf("%d other users are still using ino = %d\n", mip->refCount, mip->ino);
+	} else {
+		if(mip->dirty) {
+			printf("Writing back inode\n");
+			//write all back
+			closeMinode(mip);
 		}
+		//clear all data
+		//mip->INODE = NULL;
+		//printf("Unmounting ino %d\n", mip->ino);
+		mip->mountptr = mip->dev = mip->ino = mip->refCount = mip->dirty = mip->mounted = 0; //clear ints
+		//Just set pointer to null cause we don't want to delete that pre-emptively
 	}
 	return;
 }
@@ -247,7 +244,7 @@ MINODE *dupMINODE(MINODE *dupme) {
 	}
 
 	MINODE *dupped = minodes[slot];
-	dupped->INODE = dupme->INODE;
+	//dupped->INODE ;
 	dupped->dev = dupme->dev;
 	dupped->ino = dupme->ino;
 	dupped->refCount = 1;
@@ -275,5 +272,6 @@ void closeAll() {
 }
 
 void closeMinode(MINODE *mip) {
-	put_inode(getDevID(mip->dev), mip->ino, mip->INODE);
+	printf("Closing dirty INODE %d on dev %d\n", mip->ino, getDevID(mip->dev));
+	put_inode(getDevID(mip->dev), mip->ino, &mip->INODE);
 }

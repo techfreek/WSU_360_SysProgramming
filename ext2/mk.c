@@ -4,22 +4,30 @@ extern PROC *running;
 extern MINODE *root;
 
 int mycreat(char *path) {
+	printf("make_file\n");
 	char *bname = bbasename(path);
-	int ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
+	char *name = bdirname(path);
+	int ino = running->cwd->ino; //by default the ino is the current dir
+	if(bname) {
+		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
+	}
 	
-	MINODE *parent = iget(ino, running->cwdDevId);
+	MINODE *parent = iget(getDevID(running->cwd->dev), ino);
 
+	printf("New File parent:\n");
+	printMINode(parent);
 	if(S_ISDIR(parent->INODE.i_mode)) {
-		printf("Creating a file\n");
-		/*
-			add name to parent
-			create inode (allocate inode)
-		*/
+		printf("got parent of to-be directory\n");
+		if(create(parent, name)) { //mymkdir will return 1 on success
+			parent->dirty++;
+
+			touch(parent);
+		}
 	} else {
 		printf("Invalid path\n");
 	}
 	iput(parent);
-
+	return;
 }
 
 int make_dir(char *path) {
@@ -74,24 +82,81 @@ int mymkdir(MINODE *parent, char *name) {
 	MINODE *nChild = dupMINODE(parent); //So I get basic settings copied over
 	nChild->ino = nino;
 	
-	printf("Initiazing new dir\n");
+	printf("Initiazing new dir with inode %d\n", nino);
 
-	INODE *cInode = get_inode(getDevID(nChild->dev), nChild->ino);
-	cInode->i_block[0] = nbno;
+	INODE *cInode = get_inode(getDevID(nChild->dev), nino);
+	cInode->i_block[0] = (u32)nbno;
 	cInode->i_mode = DIR_MODE;
-	cInode->i_uid = running->uid;
-	cInode->i_size = BLKSIZE;	
-	time(&cInode->i_atime);
-	time(&cInode->i_ctime);
-	time(&cInode->i_mtime);
-	time(&cInode->i_dtime);
-	cInode->i_gid = running->gid;
-	cInode->i_links_count = 2;
-	
-	put_inode(getDevID(nChild->dev), nChild->ino, cInode);
-	
+	cInode->i_uid = (u32)running->uid;
+	cInode->i_size = (u32)1024;	
+	cInode->i_atime = (u32)time(NULL);
+	cInode->i_ctime = (u32)time(NULL);
+	cInode->i_mtime = (u32)time(NULL);
+	cInode->i_dtime = (u32)time(NULL);
+	cInode->i_gid = (u32)running->gid;
+	cInode->i_links_count = 1;
+
+	nChild->INODE = *cInode;
+
+	nChild->dirty++;
+
+
+
+	//put_inode(getDevID(nChild->dev), nino, cInode);
+
 	insertChild(parent, nChild, name);
-	printf("Directory created\n");
+	iput(nChild);
+
+	printf("DIR created\n");
+	return 1;
+}
+
+int create(MINODE *parent, char *name) {
+	/*
+		add name to parent
+		create inode (allocate inode)
+	*/
+	printf("Creating a file on dev %d devId %d\n", parent->dev, getDevID(parent->dev));
+	int nino = ialloc(getDevID(parent->dev));
+	int nbno = balloc(getDevID(parent->dev));
+
+	if(!nino || !nbno) {
+		printf("No INOs or BNOs remaining.\n");
+		iput(parent);
+		return 0;
+	}
+
+	printf("Making new minode\n");
+
+	MINODE *nChild = dupMINODE(parent); //So I get basic settings copied over
+	nChild->ino = nino;
+	
+	printf("Initiazing new file with inode %d\n", nino);
+
+	INODE *cInode = get_inode(getDevID(nChild->dev), nino);
+	cInode->i_block[0] = (u32)nbno;
+	cInode->i_mode = FILE_MODE;
+	cInode->i_uid = (u32)running->uid;
+	cInode->i_size = (u32)0;	
+	cInode->i_atime = (u32)time(NULL);
+	cInode->i_ctime = (u32)time(NULL);
+	cInode->i_mtime = (u32)time(NULL);
+	cInode->i_dtime = (u32)time(NULL);
+	cInode->i_gid = (u32)running->gid;
+	cInode->i_links_count = 1;
+
+	nChild->INODE = *cInode;
+
+	nChild->dirty++;
+
+
+
+	//put_inode(getDevID(nChild->dev), nino, cInode);
+
+	insertChild(parent, nChild, name);
+	iput(nChild);
+
+	printf("File created\n");
 	return 1;
 }
 
@@ -99,14 +164,14 @@ int mymkdir(MINODE *parent, char *name) {
 //Returns 1 if it does
 //Returns 0 if it does not
 int childExists(MINODE  *parent, char *childname) {
-	int i = 0;
+	int i = 0, ino = 0;
 	INODE pInode = parent->INODE;
 	char buf[BLKSIZE];	
 
 	for(; i < SINGLEINDIRECT && pInode.i_block[i]; i++) {
 		get_block(getDevID(parent->dev), pInode.i_block[i], buf);
-		if(findName(buf, childname)) {
-			return 1;
+		if(ino = findName(buf, childname)) {
+			return ino;
 		}
 	} 
 	return 0;
@@ -129,7 +194,7 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 
 
 
-	nDir->inode = (u32)child->ino;
+	nDir->inode = child->ino;
 	nDir->rec_len = calcIdeal(new_name_len);
 	nDir->name_len = new_name_len;
 	strncpy(nDir->name, name, new_name_len);
@@ -140,24 +205,28 @@ int insertChild(MINODE *parent, MINODE *child, char *name) {
 		
 		dp = (DIR *)cp;
 		if(!isIdeal(dp) && ((dp->rec_len - calcIdeal(dp->name_len)) >= nDir->rec_len)) {
-			printf("Found spot in i_block[%d]\n", i);
+			//printf("Found spot in i_block[%d]\n", i);
 			oldLength = dp->rec_len;
-			printf("DP size before: %d\n", dp->rec_len);
+			//printf("DP size before: %d\n", dp->rec_len);
 			dp->rec_len = calcIdeal(dp->name_len);
-			printf("DP size after: %d\n", dp->rec_len);
+			//printf("DP size after: %d\n", dp->rec_len);
 			
 			np = cp + dp->rec_len; //now points at where the new record will go
 			
-			printf("Now writing new entry\n");
+			//printf("Now writing new entry\n");
 
 			nDir->rec_len = oldLength - dp->rec_len; //take up all the space left
 			
 			DIR *temp = (SHUTUP)np;
 			*temp = *nDir;
 
+			printf("old Dir entry: %d %d %d %s\n", dp->inode, dp->rec_len, dp->name_len, dp->name);
+			printf("New Dir entry: %d %d %d %s\n", temp->inode, temp->rec_len, temp->name_len, temp->name);
+
 			printf("Done writing new entry\n");
 
 			put_block(devId, ip->i_block[i], buf);
+
 			return;
 		}
 		

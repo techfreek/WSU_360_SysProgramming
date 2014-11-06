@@ -41,7 +41,7 @@ int ls(char *pathname) {
 	}
 }
 
-int list_file(MINODE* mip, char* name) {
+int list_file(INODE *ip, char* name) {
 	/*
 	 INODE *ip = &mip->INODE;
 							    R L D
@@ -51,8 +51,8 @@ int list_file(MINODE* mip, char* name) {
 	 if ip->i_mode is a LNK file:
 			printf(" -> %s\n", (char *)ip->i_block);
 			*/
+	
 	//printMINode(mip);
-	INODE *ip = &(mip->INODE);
 	//File type
 	if(S_ISREG(ip->i_mode)) {
 		printf("-");
@@ -77,11 +77,13 @@ int list_file(MINODE* mip, char* name) {
 	(S_IWOTH & ip->i_mode) ? printf("w") : printf("-");
 	(S_IXOTH & ip->i_mode) ? printf("x") : printf("-");
 
-	char timestr[NNAME];
-	strcpy(timestr, ctime(&ip->i_ctime));
-	timestr[strlen(timestr) - 1] = 0;
+	time_t c_time = (time_t)ip->i_ctime;
+	//char *tstr = ctime(&(ip->i_ctime));
+	/*char timestr[STRSIZE];
+	strcpy(timestr, ctime(&(ip->i_ctime)));
+	timestr[strlen(timestr) - 1] = 0;//*/
 
-	printf("%3d %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, timestr, name);
+	printf("%3d %3d %3d %6d %s %s", ip->i_links_count, ip->i_gid, ip->i_uid, ip->i_size, "", name);
 	if(S_ISLNK(ip->i_mode)) {
 		printf(" -> %s\n", (char *)ip->i_block);
 	} else {
@@ -108,7 +110,7 @@ int list_dir(MINODE* mip) {
 	char *cp;
 
 	int i = 0, devId = getDevID(mip->dev);
-	for(; (i < SINGLEINDIRECT) && (ip->i_block[i] > 0); i++) { //If a directory needs to start using indirect blocks to store its files, something is wrong
+	for(; (i < SINGLEINDIRECT) && ip->i_block[i]; i++) { //If a directory needs to start using indirect blocks to store its files, something is wrong
 		get_block(devId, ip->i_block[i], buf);
 		dp = (DIR *)buf;
 		cp = buf;
@@ -118,7 +120,7 @@ int list_dir(MINODE* mip) {
 			//printf("\t%4d %4d %2d    %s\n", dp->inode, dp->rec_len, dp->name_len, name);
 			cip = iget(devId, dp->inode);
 			//printf("Opened %d\n", dp->inode);
-			list_file(cip, name);
+			list_file(&cip->INODE, name);
 			//printf("Closing %d\n", dp->inode);
 			iput(cip); //relase hold
 			cp += dp->rec_len;
