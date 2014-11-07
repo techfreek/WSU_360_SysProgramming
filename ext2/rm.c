@@ -42,6 +42,11 @@ int myrmdir(char *path) {
 		}
 
 		INODE targetInode = *get_inode(devId, tino);
+		if(!S_ISDIR(targetInode.i_mode)) { 
+			printf("Specified item is not a directory\n");
+			return 0;
+		}
+	
 		list_file(&targetInode, "Directory to be deleted\n");
 		printf("dir i_block[0] = %d\n", targetInode.i_block[0]);
 

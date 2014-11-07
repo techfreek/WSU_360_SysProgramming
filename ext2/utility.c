@@ -145,10 +145,11 @@ char* bdirname(const char* path) {
 		char *end = strrchr(copy, '/');
 		if(end != NULL) {
 			end++; //skip past the '/'
-			//*end = 0; //null terminate at specified character
+			char *term = end + (end - copy);
+			*term = 0; //null terminate at specified character
 			return end;
 		} else {
-			return NULL;
+			return copy;
 		}
 	}
 }
@@ -156,7 +157,7 @@ char* bdirname(const char* path) {
 char* bbasename(const char* path) {
 	char* copy = strdup(path);
 	char* temp = NULL;
-	char* basename = (char*)malloc(NNAME);
+	//char* basename = (char*)malloc(NNAME);
 
 	if(strlen(path) == 0) { //Make sure I don't pass in nothing and crash
 		return 0;
@@ -165,12 +166,15 @@ char* bbasename(const char* path) {
 
 		if(bNameExists) {
 			char *end = strrchr(copy, '/');
-
-			strncpy(basename, copy, (end-copy));
-
+			char *temp = (end - copy) + 1;
+			*(copy + strlen(end) - 1) = 0;
+			printf("bbasename: %s\n", copy);
+			return copy;
+		} else {
 			free(copy);
+			//free(basename);
+			return NULL;
 		}
-		return basename; //returns total number of levels to traverse
 	}
 }
 
@@ -187,6 +191,10 @@ int getino(int devId, int startIno, char *pathname) {
 
 	if(pathname[0] == '/') { //start from root
 		startIno = 2;
+	}
+
+	if(strlen(pathname) == 1 && pathname[0] == '/') {
+		return 2;
 	}
 
 	numNames = tokenize(pathname, names);
