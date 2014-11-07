@@ -38,6 +38,8 @@ int make_dir(char *path) {
 	printf("make_dir\n");
 	char *bname = bbasename(path);
 	char *name = bdirname(path);
+	printf("dirname: %s\n", name);
+	printf("Basename: %s\n", bname);
 	int ino = running->cwd->ino; //by default the ino is the current dir
 	if(bname) {
 		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);

@@ -143,11 +143,10 @@ char* bdirname(const char* path) {
 		return copy;
 	} else {
 		char *end = strrchr(copy, '/');
-		int i;
 		if(end != NULL) {
-			i = end - copy;
-			*end = 0; //null terminate at specified character
-			return copy;
+			end++; //skip past the '/'
+			//*end = 0; //null terminate at specified character
+			return end;
 		} else {
 			return NULL;
 		}
@@ -157,19 +156,18 @@ char* bdirname(const char* path) {
 char* bbasename(const char* path) {
 	char* copy = strdup(path);
 	char* temp = NULL;
-	char* basename = NULL;
+	char* basename = (char*)malloc(NNAME);
 
 	if(strlen(path) == 0) { //Make sure I don't pass in nothing and crash
 		return 0;
 	} else {
 		char *bNameExists = strchr(path, '/'); //so we don't return the dir name as the basename
-		if(bNameExists) {
-			temp = strtok(copy, "/");
 
-			while(temp != NULL) {
-				basename = temp;
-				temp = strtok(NULL, "/");
-			}
+		if(bNameExists) {
+			char *end = strrchr(copy, '/');
+
+			strncpy(basename, copy, (end-copy));
+
 			free(copy);
 		}
 		return basename; //returns total number of levels to traverse
