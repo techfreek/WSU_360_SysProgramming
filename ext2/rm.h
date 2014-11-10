@@ -9,9 +9,10 @@
 #include "mk.h"
 
 
-int myunlink(char *path);
 int myrmdir(char *path);
 char* inodeExists(MINODE *parent, int ino, char buf[], char **pp);
 int removechild(MINODE *parent, int ino, int devId);
+int isEmptyDir(INODE *ip, int devId);
+int clearBlocks(INODE *ip, int devId);
 
 #endif

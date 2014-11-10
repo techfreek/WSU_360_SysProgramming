@@ -3,22 +3,6 @@
 extern PROC *running;
 extern MINODE *root;
 
-int myunlink(char *path) {
-	/*int ino = getino(running->cwdDevId, running->cwd->ino, path);
-	
-	INODE *file = get_inode(running->cwdDevId, ino);
-
-	if(S_ISREG(file->i_mode)) {
-		
-	} else {
-		printf("Specified file (%s) is not a file.\n", path);
-	}
-	free(file);*/
-
-	printf("Unlink not implemented yet\n");
-	return;
-}
-
 int myrmdir(char *path) {
 	char *bname = bbasename(path);
 	char *name = bdirname(path);
@@ -35,6 +19,7 @@ int myrmdir(char *path) {
 	if(S_ISDIR(parent->INODE.i_mode)) { //see if we can move into it to find out more
 		int tino = childExists(parent, name);
 		if(!tino) {
+			iput(parent);
 			printf("Specified folder does not exist\n");
 			return 0;
 		} else {
@@ -77,16 +62,19 @@ int myrmdir(char *path) {
 					parent->dirty++;
 				} else {
 					printf("Directory is not empty\n");
+					iput(parent);
 					return 0;
 				}
 			} else {
 				printf("Insufficent permissions to delete file\n");
+				iput(parent);
 				return 0;
 			}
 		} else {
 			if(links != 2) printf("This directory has %d links\n", links);
 			if(busy) printf("This directory is still being used\n");
 			printf("Could not delete directory\n");
+			iput(parent);
 			return 0;
 		}
 	} else {

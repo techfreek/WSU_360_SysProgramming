@@ -173,7 +173,7 @@ int create(MINODE *parent, char *name) {
 	iput(nChild);
 
 	printf("File created\n");
-	return 1;
+	return nino;
 }
 
 //This scans through all i_blocks to see if the specified name exists
