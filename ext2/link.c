@@ -12,6 +12,56 @@ int link(char *old_file, char *new_file) {
 		iput(old_file)
 
 	*/
+	char *oldbasename = bbasename(old_name);
+	char *oldname = bdirname(old_name);
+	char *newbasename = bbasename(new_file);
+	char *newname = bdirname(new_file);
+
+	int cino;
+	int ino = running->cwd->ino;
+	int devId = getDevId(running->cwd->dev);
+
+	if(oldbasename) {
+		ino = getino(devId, running->cwd, oldbasename);
+	}
+
+	MINODE *parent = iget(devId, ino);
+
+	if(S_ISDIR(parent->INODE.i_mode)) {
+		int tino = childExists(parent, oldname); //get folder we will link to
+		if(!tino) {
+			iput(parent);
+			printf("Specified file does not exist\n");
+			return 0;
+		} else {
+			printf("REG file found with ino %d\n", tino);
+		}
+
+		MINODE *original = iget(devId, tino);
+
+		if(newbasename) {
+			cino = getino(devId, running->cwd, newbasename);
+		}
+
+		MINODE *newParent = iget(devId, cino);
+		if(S_ISDIR(newParent->INODE.i_mode)) {
+			int nino = childExists(newParent, newname);
+			if(!nino) {
+				//we can create the hardlink
+				insertChild(newParent, original, name);
+				printf("Link created\n");
+				original->INODE.i_links_count++;
+				iput(original);
+				iput(parent);
+			}
+		} else {
+			iput(original);
+			iput(parent);
+			printf("Not a valid destination\n");
+			return 0;
+		}
+	}
+
 }
 
 int symlink(char *old_name, char *new_file) {
@@ -36,7 +86,7 @@ int symlink(char *old_name, char *new_file) {
 	int devId = getDevId(running->cwd->dev);
 
 	if(oldbasename) {
-		ino = getino(devId, running->cwd, bname);
+		ino = getino(devId, running->cwd, oldbasename);
 	}
 
 	MINODE *parent = iget(devId, ino);
@@ -62,6 +112,25 @@ int symlink(char *old_name, char *new_file) {
 				//then change type to LNK
 				//then write oldname to i_block
 			//iput()
+			int newParentIno;
+			MINODE *newParent = parent; //default to same dir
+			if(newbasename) {
+				newParentIno = getino(devId, running->cwd, newbasename);
+				newParent = iget(devId, newParentIno);
+			}
+
+			int lnkIno = create(newParent, newname);
+
+			INODE *cInode = get_inode(devId, lnkIno);
+			cInode->i_block = (char*)oldname;
+			cInode->i_mode = 0120000; //Set LNK type... i think
+			put_inode(devId, lnkIno, cInode);
+			printf("Created SYMLNK\n");
+			if(newParent != parent) {
+				iput(newParent);
+			}
+			iput(parent);
+			iput(child);
 		}
 
 
