@@ -181,6 +181,11 @@ int unlink(char *pathname) {
 			removechild(parent, tino, devId);
 		} else {
 			//don't mark as dirty if removing otherwise we'd try to write it back...
+			
+
+			//should we remove child and leave blocks/inode?
+			
+
 			child->dirty++;
 		}
 
