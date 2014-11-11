@@ -1,5 +1,8 @@
 #include "link.h"
 
+extern PROC *running;
+extern MINODE *root;
+
 int link(char *old_file, char *new_file) {
 	/*
 		Verify that oldfile path is valid and not a folder
@@ -12,14 +15,14 @@ int link(char *old_file, char *new_file) {
 		iput(old_file)
 
 	*/
-	char *oldbasename = bbasename(old_name);
-	char *oldname = bdirname(old_name);
+	char *oldbasename = bbasename(old_file);
+	char *oldname = bdirname(old_file);
 	char *newbasename = bbasename(new_file);
 	char *newname = bdirname(new_file);
 
 	int cino;
 	int ino = running->cwd->ino;
-	int devId = getDevId(running->cwd->dev);
+	int devId = getDevID(running->cwd->dev);
 
 	if(oldbasename) {
 		ino = getino(devId, running->cwd, oldbasename);
@@ -48,7 +51,7 @@ int link(char *old_file, char *new_file) {
 			int nino = childExists(newParent, newname);
 			if(!nino) {
 				//we can create the hardlink
-				insertChild(newParent, original, name);
+				insertChild(newParent, original, newname);
 				printf("Link created\n");
 				original->INODE.i_links_count++;
 				iput(original);
@@ -83,7 +86,7 @@ int symlink(char *old_name, char *new_file) {
 	}
 
 	int ino = running->cwd->ino;
-	int devId = getDevId(running->cwd->dev);
+	int devId = getDevID(running->cwd->dev);
 
 	if(oldbasename) {
 		ino = getino(devId, running->cwd, oldbasename);
@@ -122,7 +125,10 @@ int symlink(char *old_name, char *new_file) {
 			int lnkIno = create(newParent, newname);
 
 			INODE *cInode = get_inode(devId, lnkIno);
-			cInode->i_block = (char*)oldname;
+			printf("About to store name in i_block\n");
+			char* i_name = &(cInode->i_block);
+			strncpy(i_name, old_name, 60);
+			printf("Stored name in i_block\n");
 			cInode->i_mode = 0120000; //Set LNK type... i think
 			put_inode(devId, lnkIno, cInode);
 			printf("Created SYMLNK\n");
@@ -149,11 +155,11 @@ int unlink(char *pathname) {
 			dalloc inode
 		remove name from parent
 	*/
-	char *bname = bbasename(path);
-	char *name = bdirname(path);
+	char *bname = bbasename(pathname);
+	char *name = bdirname(pathname);
 
 	int ino = running->cwd->ino;
-	int devId = getDevId(running->cwd->dev);
+	int devId = getDevID(running->cwd->dev);
 
 	if(bname) {
 		ino = getino(devId, running->cwd, bname);
@@ -181,11 +187,7 @@ int unlink(char *pathname) {
 			removechild(parent, tino, devId);
 		} else {
 			//don't mark as dirty if removing otherwise we'd try to write it back...
-			
-
-			//should we remove child and leave blocks/inode?
-			
-
+			removechild(parent, tino, devId); //we want to remove the link with the specified path
 			child->dirty++;
 		}
 
