@@ -35,6 +35,7 @@ DIR   *dp;
 // Default dir and regulsr file modes
 #define DIR_MODE    0040777 
 #define FILE_MODE   0100644
+#define LNK_MODE	0120644
 #define SUPER_MAGIC  0xEF53
 #define SUPER_USER        0
 

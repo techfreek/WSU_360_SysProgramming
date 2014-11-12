@@ -5,9 +5,10 @@
 #include "minode.h"
 #include "rm.h"
 #include "mk.h"
+#include "link.h"
 
 
-char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", 0};
+char *cmds[] = {"ls", "pwd", "cd", "mkdir", "rmdir", "creat", "procs", "minodes", "mounts", "link", "unlink", "symlink", 0};
 char line[128], cmd[32], pathname[64], params[128];
 extern PROC *running;
 extern MINODE *root;
@@ -32,6 +33,7 @@ int main() {
 
 		getCMD(line);
 		getPath(line);
+		getParams(line);
 
 		if (line[0]==0) {
 			continue;
@@ -101,7 +103,7 @@ int functionLookup(char *cmd) {
 int execcmd(int cmd, char *path) {
 	cmd--;
 	
-	void (*fptr[])(char*) = {ls, pwd, cd, make_dir, myrmdir, mycreat, printAllProcs, printAllMINodes, printAllMounts, make_dir};
+	void (*fptr[])(char*, char*) = {ls, pwd, cd, make_dir, myrmdir, mycreat, printAllProcs, printAllMINodes, printAllMounts, link, unlink, symlink};
 
-	(*fptr[cmd])(path);
+	(*fptr[cmd])(path, params);
 }

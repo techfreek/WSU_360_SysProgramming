@@ -145,9 +145,10 @@ char* bdirname(const char* path) {
 		char *end = strrchr(copy, '/');
 		if(end != NULL) {
 			end++; //skip past the '/'
-			char *term = end + (end - copy);
+			char *term = end + (end - copy) - 1;
 			*term = 0; //null terminate at specified character
-			return end;
+			printf("bdirname: %s\n", copy);
+			return copy;
 		} else {
 			return copy;
 		}
@@ -167,7 +168,8 @@ char* bbasename(const char* path) {
 		if(bNameExists) {
 			char *end = strrchr(copy, '/');
 			char *temp = (end - copy) + 1;
-			*(copy + strlen(end) - 1) = 0;
+			*(copy + strlen(end)) = 0;
+			if(copy[0] == '/') { copy++; } //advance past slash
 			printf("bbasename: %s\n", copy);
 			return copy;
 		} else {
@@ -188,6 +190,7 @@ int getino(int devId, int startIno, char *pathname) {
 	int numNames, rootDirBlock, targetINO = 0;
 	//INODE* file;
 	//rootDirBlock = 	firstIBlock();
+	printf("Search path: %s\n", pathname);
 
 	if(pathname[0] == '/') { //start from root
 		startIno = 2;
@@ -199,6 +202,7 @@ int getino(int devId, int startIno, char *pathname) {
 
 	numNames = tokenize(pathname, names);
 
+	printf("Searching from ino %d\n", startIno);
 	targetINO = search(devId, names, numNames - 1, startIno);
 
 	//file = getInode(disk, targetINO);
@@ -223,17 +227,19 @@ int search(int devId, char names[64][128], int dirsRemaining, int pIno) {
 	int i = 0, tIno = 0;
 
 	for(i = 0; i < 12 && !tIno && parent->i_block[i]; i++) {
-		getchar();
+		//getchar();
 		get_block(devId, parent->i_block[i], buf);
 		tIno = findName(buf, names[0]);
 	}
 
 	if(!dirsRemaining) { //if we at the end of the search
+		printf("Found %s at %d\n", names[0], tIno);
 		return tIno;
 	} else {
 		file = get_inode(devId, tIno);
 		if(S_ISDIR(file->i_mode)) {
-			getchar();
+			//getchar();
+
 			return search(devId, names + 1, dirsRemaining -1, tIno);
 		} else {
 			return 0;
@@ -250,8 +256,8 @@ int findName(char buf[], char name[]) {
 	cp = buf;
 	while(cp < (buf + 1024)) {
 		getDIRFileName(dp, temp);
-		printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
-			temp, dp->inode, dp->rec_len, dp->name_len);
+		//printf("name: %s Inode: %d, rec_len: %d, name_len: %d \n", 
+			//temp, dp->inode, dp->rec_len, dp->name_len);
 		//getchar();
 		//printf("%s = %s ? = %d\n", name, temp, strEq(name, temp));
 		if(strEq(name, temp)) {

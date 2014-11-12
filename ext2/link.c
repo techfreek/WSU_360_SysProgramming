@@ -15,23 +15,28 @@ int link(char *old_file, char *new_file) {
 		iput(old_file)
 
 	*/
+	if(strlen(old_file) == 0 || strlen(new_file) == 0) {
+		printf("Please provide a file name and a link file name\n");
+		return 0;
+	}
+
 	char *oldbasename = bbasename(old_file);
 	char *oldname = bdirname(old_file);
 	char *newbasename = bbasename(new_file);
 	char *newname = bdirname(new_file);
 
-	int cino;
+	int cino = running->cwd->ino;
 	int ino = running->cwd->ino;
 	int devId = getDevID(running->cwd->dev);
 
-	if(oldbasename) {
-		ino = getino(devId, running->cwd, oldbasename);
+	if(oldname) {
+		ino = getino(devId, running->cwd, oldname);
 	}
 
 	MINODE *parent = iget(devId, ino);
 
 	if(S_ISDIR(parent->INODE.i_mode)) {
-		int tino = childExists(parent, oldname); //get folder we will link to
+		int tino = childExists(parent, oldbasename); //get folder we will link to
 		if(!tino) {
 			iput(parent);
 			printf("Specified file does not exist\n");
@@ -54,10 +59,18 @@ int link(char *old_file, char *new_file) {
 				insertChild(newParent, original, newname);
 				printf("Link created\n");
 				original->INODE.i_links_count++;
+				original->dirty++;
+				printf("Original now has  %d links\n", original->INODE.i_links_count);
+				iput(newParent);
+				iput(original);
+				iput(parent);
+			} else {
+				iput(newParent);
 				iput(original);
 				iput(parent);
 			}
 		} else {
+			iput(newParent);
 			iput(original);
 			iput(parent);
 			printf("Not a valid destination\n");
@@ -75,10 +88,19 @@ int symlink(char *old_name, char *new_file) {
 		write old_name to i_block
 		i put both
 	*/
+	printf("Symlnk\n");
+	if(strlen(old_name) == 0 || strlen(new_file) == 0) {
+		printf("Please provide a file name and a link file name\n");
+		return 0;
+	}
+
+
+
 	char *oldbasename = bbasename(old_name);
 	char *oldname = bdirname(old_name);
 	char *newbasename = bbasename(new_file);
 	char *newname = bdirname(new_file);
+
 
 	if(strlen(old_name) >= 60) {
 		printf("The original file's name is too long\n");
@@ -88,15 +110,18 @@ int symlink(char *old_name, char *new_file) {
 	int ino = running->cwd->ino;
 	int devId = getDevID(running->cwd->dev);
 
-	if(oldbasename) {
-		ino = getino(devId, running->cwd, oldbasename);
+	if(oldname) {
+		ino = getino(devId, running->cwd, oldname);
 	}
+
+	printf("Parent dirname: %s ino: %d\n", oldname, ino);
 
 	MINODE *parent = iget(devId, ino);
 
 	if(S_ISDIR(parent->INODE.i_mode)) {
-		int tino = childExists(parent, oldname);
+		int tino = childExists(parent, oldbasename);
 		if(!tino) {
+			iput(parent);
 			printf("Specified file does not exist\n");
 			return 0;
 		} else {
@@ -115,26 +140,28 @@ int symlink(char *old_name, char *new_file) {
 				//then change type to LNK
 				//then write oldname to i_block
 			//iput()
-			int newParentIno;
+			int newParentIno = running->cwd->ino;
 			MINODE *newParent = parent; //default to same dir
 			if(newbasename) {
+				printf("Searching new basename\n");
 				newParentIno = getino(devId, running->cwd, newbasename);
-				newParent = iget(devId, newParentIno);
 			}
+			newParent = iget(devId, newParentIno);
 
 			int lnkIno = create(newParent, newname);
 
-			INODE *cInode = get_inode(devId, lnkIno);
-			printf("About to store name in i_block\n");
-			char* i_name = &(cInode->i_block);
-			strncpy(i_name, old_name, 60);
-			printf("Stored name in i_block\n");
-			cInode->i_mode = 0120000; //Set LNK type... i think
-			put_inode(devId, lnkIno, cInode);
-			printf("Created SYMLNK\n");
-			if(newParent != parent) {
-				iput(newParent);
+			if(lnkIno) {
+				INODE *cInode = get_inode(devId, lnkIno);
+				char* i_name = &(cInode->i_block);
+				strncpy(i_name, old_name, 60);
+				cInode->i_mode = LNK_MODE; //Set LNK type
+				put_inode(devId, lnkIno, cInode);
+				printf("Created SYMLNK\n");
+			} else {
+				printf("Could not create link\n");
 			}
+
+			iput(newParent);
 			iput(parent);
 			iput(child);
 		}
@@ -155,14 +182,21 @@ int unlink(char *pathname) {
 			dalloc inode
 		remove name from parent
 	*/
+	if(strlen(pathname) == 0) {
+		printf("Please provide a file name and a link file name\n");
+		return 0;
+	}
+
 	char *bname = bbasename(pathname);
 	char *name = bdirname(pathname);
+
+	printf("unlink dirname: %s, basename: %s\n", name, bname);
 
 	int ino = running->cwd->ino;
 	int devId = getDevID(running->cwd->dev);
 
-	if(bname) {
-		ino = getino(devId, running->cwd, bname);
+	if(name) {
+		ino = getino(devId, running->cwd, name);
 	}
 
 	MINODE *parent = iget(devId, ino);
@@ -170,25 +204,38 @@ int unlink(char *pathname) {
 	printInode(&parent->INODE);
 
 	if(S_ISDIR(parent->INODE.i_mode)) {
-		int tino = childExists(parent, name);
+		int tino = childExists(parent, bname);
 		if(!tino) {
 			printf("Specified file does not exist\n");
 			iput(parent);
 			return 0;
 		} else {
-			printf("REG file found with ino %d\n", tino);
+			printf("REG file (%s) found with ino %d\n", bname, tino);
 		}
 
 		MINODE *child = iget(devId, tino);
+		if(!S_ISDIR(child->INODE.i_mode)) {
+			child->INODE.i_links_count--;
+			if(!child->INODE.i_links_count) { //links count now 0, proceed to delete
+				//don't mark as dirty if removing otherwise we'd try to write it back...
+				printf("Last one out, hit the lights\n");
 
-		if(!--child->INODE.i_links_count) { //links count now 0, proceed to delete
-			clearBlocks(&child->INODE, devId);
-			idealloc(devId, tino);
-			removechild(parent, tino, devId);
+				//blocks don't need to be cleared if it is a sym link... it has no blocks
+				if(!S_ISLNK(child->INODE.i_mode)) {
+					clearBlocks(&child->INODE, devId);
+					printf("Blocks cleared\n");
+				}
+				idealloc(devId, tino);
+				printf("Ino deallocated\n");
+				removechild(parent, tino, devId);
+				printf("Removed from parent\n");
+			} else {
+				printf("Removing name from parent. Other users connected to inode.\n");
+				removechild(parent, tino, devId); //we want to remove the link with the specified path
+				child->dirty++;
+			}
 		} else {
-			//don't mark as dirty if removing otherwise we'd try to write it back...
-			removechild(parent, tino, devId); //we want to remove the link with the specified path
-			child->dirty++;
+			printf("Silly, you can't unlink a dir!\n");
 		}
 
 		iput(child);

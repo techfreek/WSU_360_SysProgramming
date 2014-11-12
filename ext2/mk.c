@@ -136,6 +136,11 @@ int create(MINODE *parent, char *name) {
 	int nino = ialloc(getDevID(parent->dev));
 	int nbno = balloc(getDevID(parent->dev));
 
+	if(childExists(parent, name)) {
+		printf("File (%s) already exists\n", name);
+		return 0;
+	}
+
 	if(!nino || !nbno) {
 		printf("No INOs or BNOs remaining.\n");
 		iput(parent);

@@ -13,24 +13,26 @@ int ls(char *pathname) {
 		list_dir(mip);
 
 	iput(mip);*/
-	int devId = running->cwdDevId;
+	int devId = getDevID(running->cwd->dev);
 	int ino;
 	MINODE *mip;
 
+	printf("ls path: %s\n", pathname);
+
 	//printf("LSing path: %s\n", pathname);
 	if(strlen(pathname)) { //if a path is provided
-		ino = getino(devId, pathname);	
+		ino = getino(devId, running->cwd->ino, pathname);	
 		mip = iget(devId, ino);
 	} else {
 		ino = running->cwd->ino;
 		mip = running->cwd;
 	}
 
-	printf("ls dir\n");
-	printMINode(mip);
+	//printf("ls dir\n");
+	//printMINode(mip);
 	
 	if(S_ISREG(mip->INODE.i_mode)) {
-		printf("Listing file\n");
+		//printf("Listing file\n");
 		list_file(mip, bbasename(pathname));
 	} else {
 		list_dir(mip);
