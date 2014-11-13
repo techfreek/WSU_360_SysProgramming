@@ -140,7 +140,7 @@ char* bdirname(const char* path) {
 
 	char *bNameExists = strchr(path, '/'); //so we don't return the dir name as the basename
 	if(!bNameExists) {
-		return copy;
+		return 0;
 	} else {
 		char *end = strrchr(copy, '/');
 		if(end != NULL) {
@@ -150,7 +150,7 @@ char* bdirname(const char* path) {
 			printf("bdirname: %s\n", copy);
 			return copy;
 		} else {
-			return copy;
+			return 0;
 		}
 	}
 }
@@ -161,7 +161,7 @@ char* bbasename(const char* path) {
 	//char* basename = (char*)malloc(NNAME);
 
 	if(strlen(path) == 0) { //Make sure I don't pass in nothing and crash
-		return 0;
+		return copy;
 	} else {
 		char *bNameExists = strchr(path, '/'); //so we don't return the dir name as the basename
 
@@ -173,9 +173,7 @@ char* bbasename(const char* path) {
 			printf("bbasename: %s\n", copy);
 			return copy;
 		} else {
-			free(copy);
-			//free(basename);
-			return NULL;
+			return copy;
 		}
 	}
 }

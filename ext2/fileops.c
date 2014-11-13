@@ -17,10 +17,9 @@ int ls(char *pathname) {
 	int ino;
 	MINODE *mip;
 
-	printf("ls path: %s\n", pathname);
-
 	//printf("LSing path: %s\n", pathname);
 	if(strlen(pathname)) { //if a path is provided
+		printf("ls path: %s\n", pathname);
 		ino = getino(devId, running->cwd->ino, pathname);	
 		mip = iget(devId, ino);
 	} else {

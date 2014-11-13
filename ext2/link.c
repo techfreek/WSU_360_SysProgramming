@@ -115,8 +115,11 @@ int symlink(char *old_name, char *new_file) {
 	}
 
 	printf("Parent dirname: %s ino: %d\n", oldname, ino);
+	printf("Oldbasename: %s\n", oldbasename);
 
 	MINODE *parent = iget(devId, ino);
+
+	printf("Got parent inode\n");
 
 	if(S_ISDIR(parent->INODE.i_mode)) {
 		int tino = childExists(parent, oldbasename);
@@ -142,13 +145,13 @@ int symlink(char *old_name, char *new_file) {
 			//iput()
 			int newParentIno = running->cwd->ino;
 			MINODE *newParent = parent; //default to same dir
-			if(newbasename) {
+			if(newname) {
 				printf("Searching new basename\n");
-				newParentIno = getino(devId, running->cwd, newbasename);
+				newParentIno = getino(devId, running->cwd, newname);
 			}
 			newParent = iget(devId, newParentIno);
 
-			int lnkIno = create(newParent, newname);
+			int lnkIno = create(newParent, newbasename);
 
 			if(lnkIno) {
 				INODE *cInode = get_inode(devId, lnkIno);
