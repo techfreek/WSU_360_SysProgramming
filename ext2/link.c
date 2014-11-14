@@ -151,7 +151,7 @@ int symlink(char *old_name, char *new_file) {
 			}
 			newParent = iget(devId, newParentIno);
 
-			int lnkIno = create(newParent, newname);
+			int lnkIno = create(newParent, newbasename);
 
 			if(lnkIno) {
 				INODE *cInode = get_inode(devId, lnkIno);
@@ -219,7 +219,7 @@ int unlink(char *pathname) {
 		MINODE *child = iget(devId, tino);
 		if(!S_ISDIR(child->INODE.i_mode)) {
 			child->INODE.i_links_count--;
-			if(!child->INODE.i_links_count) { //links count now 0, proceed to delete
+			if(!child->INODE.i_links_count) { //linkks count now 0, proceed to delete
 				//don't mark as dirty if removing otherwise we'd try to write it back...
 				printf("Last one out, hit the lights\n");
 
