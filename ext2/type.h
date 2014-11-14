@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#include <ext2fs/ext2_fs.h>   // MAY NEED "ext2_fs.h"
+#include "ext2.h"   // MAY NEED "ext2_fs.h"
 #include <libgen.h>
 #include <string.h>
 #include <sys/stat.h>

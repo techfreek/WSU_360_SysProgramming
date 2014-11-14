@@ -47,16 +47,16 @@ int link(char *old_file, char *new_file) {
 
 		MINODE *original = iget(devId, tino);
 
-		if(newbasename) {
-			cino = getino(devId, running->cwd, newbasename);
+		if(newname) {
+			cino = getino(devId, running->cwd, newname);
 		}
 
 		MINODE *newParent = iget(devId, cino);
 		if(S_ISDIR(newParent->INODE.i_mode)) {
-			int nino = childExists(newParent, newname);
+			int nino = childExists(newParent, newbasename);
 			if(!nino) {
 				//we can create the hardlink
-				insertChild(newParent, original, newname);
+				insertChild(newParent, original, newbasename);
 				printf("Link created\n");
 				original->INODE.i_links_count++;
 				original->dirty++;
@@ -146,12 +146,12 @@ int symlink(char *old_name, char *new_file) {
 			int newParentIno = running->cwd->ino;
 			MINODE *newParent = parent; //default to same dir
 			if(newname) {
-				printf("Searching new basename\n");
+				printf("Searching new name\n");
 				newParentIno = getino(devId, running->cwd, newname);
 			}
 			newParent = iget(devId, newParentIno);
 
-			int lnkIno = create(newParent, newbasename);
+			int lnkIno = create(newParent, newname);
 
 			if(lnkIno) {
 				INODE *cInode = get_inode(devId, lnkIno);
