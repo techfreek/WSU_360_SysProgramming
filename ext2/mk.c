@@ -6,13 +6,13 @@ extern MINODE *root;
 int mycreat(char *path) {
 	printf("make_file\n");
 	char *bname = bbasename(path);
-	char *name = bdirname(path);
+	char *dname = bdirname(path);
 	int ino = running->cwd->ino; //by default the ino is the current dir
-	if(bname) {
-		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
+	if(dname) {
+		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, dname);
 	}
 
-	if(strlen(name) == 0) {
+	if(strlen(dname) == 0) {
 		printf("Please enter a file name\n");
 	}
 	
@@ -22,7 +22,7 @@ int mycreat(char *path) {
 	printMINode(parent);
 	if(S_ISDIR(parent->INODE.i_mode)) {
 		printf("got parent of to-be directory\n");
-		if(create(parent, name)) { //mymkdir will return 1 on success
+		if(create(parent, bname)) { //mymkdir will return 1 on success
 			parent->dirty++;
 
 			touch(parent);
@@ -37,15 +37,15 @@ int mycreat(char *path) {
 int make_dir(char *path) {
 	printf("make_dir\n");
 	char *bname = bbasename(path);
-	char *name = bdirname(path);
-	printf("dirname: %s\n", name);
+	char *dname = bdirname(path);
+	printf("dirname: %s\n", dname);
 	printf("Basename: %s\n", bname);
 	int ino = running->cwd->ino; //by default the ino is the current dir
-	if(bname) {
-		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, bname);
+	if(dname) {
+		ino = getino(getDevID(running->cwd->dev), running->cwd->ino, dname);
 	}
 	
-	if(strlen(name) == 0) {
+	if(strlen(bname) == 0) {
 		printf("Please enter a name\n");
 		return 0;
 	}
@@ -55,11 +55,11 @@ int make_dir(char *path) {
 	printf("New File parent:\n");
 	printMINode(parent);
 
-	printf("New dir name: %s \n", name);
+	printf("New dir name: %s \n", bname);
 
-	if(S_ISDIR(parent->INODE.i_mode) && !childExists(parent, name)) {
+	if(S_ISDIR(parent->INODE.i_mode) && !childExists(parent, bname)) {
 		printf("got parent of to-be directory\n");
-		if(mymkdir(parent, name)) { //mymkdir will return 1 on success
+		if(mymkdir(parent, bname)) { //mymkdir will return 1 on success
 			parent->dirty++;
 			parent->INODE.i_links_count++;
 

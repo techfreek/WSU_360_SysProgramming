@@ -152,6 +152,7 @@ char* inodeExists(MINODE *parent, int ino, char buf[], char **pp) {
 		dp = (SHUTUP)cp;
 	}
 	return NULL;
+
 }
 
 int isEmptyDir(INODE *ip, int devId) {
