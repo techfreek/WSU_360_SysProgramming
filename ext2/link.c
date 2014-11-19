@@ -132,42 +132,35 @@ int symlink(char *old_name, char *new_file) {
 		}
 
 		MINODE *child = iget(devId, tino);
-		if(S_ISDIR(child->INODE.i_mode)) {
-			printf("You can't link to Dirs!\n");
-			iput(parent);
-			iput(child);
-			return 0;
-		} else {
-			//create LNK file
-				//creat() now returns the ino. So run iget(devid, creat(parent, name))
-				//then change type to LNK
-				//then write oldname to i_block
-			//iput()
-			int newParentIno = running->cwd->ino;
-			MINODE *newParent = parent; //default to same dir
-			if(newname) {
-				printf("Searching new name\n");
-				newParentIno = getino(devId, running->cwd, newname);
-			}
-			newParent = iget(devId, newParentIno);
-
-			int lnkIno = create(newParent, newbasename);
-
-			if(lnkIno) {
-				INODE *cInode = get_inode(devId, lnkIno);
-				char* i_name = &(cInode->i_block);
-				strncpy(i_name, old_name, 60);
-				cInode->i_mode = LNK_MODE; //Set LNK type
-				put_inode(devId, lnkIno, cInode);
-				printf("Created SYMLNK\n");
-			} else {
-				printf("Could not create link\n");
-			}
-
-			iput(newParent);
-			iput(parent);
-			iput(child);
+		//create LNK file
+			//creat() now returns the ino. So run iget(devid, creat(parent, name))
+			//then change type to LNK
+			//then write oldname to i_block
+		//iput()
+		int newParentIno = running->cwd->ino;
+		MINODE *newParent = parent; //default to same dir
+		if(newname) {
+			printf("Searching new name\n");
+			newParentIno = getino(devId, running->cwd, newname);
 		}
+		newParent = iget(devId, newParentIno);
+
+		int lnkIno = create(newParent, newbasename);
+
+		if(lnkIno) {
+			INODE *cInode = get_inode(devId, lnkIno);
+			char* i_name = &(cInode->i_block);
+			strncpy(i_name, old_name, 60);
+			cInode->i_mode = LNK_MODE; //Set LNK type
+			put_inode(devId, lnkIno, cInode);
+			printf("Created SYMLNK\n");
+		} else {
+			printf("Could not create link\n");
+		}
+
+		iput(newParent);
+		iput(parent);
+		iput(child);
 
 
 

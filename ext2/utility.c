@@ -279,7 +279,7 @@ int ialloc(int devId) {
 	for (i=0; i < getNInodes(devId); i++){
 		if (tst_bit(buf, i)==0){
 			set_bit(buf,i);
-			updateFreeInodes(devId, 1);
+			updateFreeInodes(devId, -1);
 
 			put_block(devId, getIMap(devId), buf);
 
@@ -301,7 +301,7 @@ int balloc(int devId) {
 	for (i=0; i < getNBlocks(devId); i++){
 		if (tst_bit(buf, i)==0){
 			set_bit(buf,i);
-			updateFreeBlocks(devId, 1);
+			updateFreeBlocks(devId, -1);
 
 			put_block(devId, getBMap(devId), buf);
 
@@ -321,7 +321,7 @@ int idealloc(int devId, int ino) {
 	get_block(devId, getIMap(devId), buf);
 			 
 	clr_bit(buf,ino - 1);
-	updateFreeInodes(devId, -1);
+	updateFreeInodes(devId, 1);
 
 	put_block(devId, getIMap(devId), buf);
 
@@ -336,7 +336,7 @@ int bdealloc(int devId, int bno) {
 	get_block(devId, getBMap(devId), buf);
 			 
 	clr_bit(buf, bno - 1); //Account for indexing starting at 1
-	updateFreeBlocks(devId, -1);
+	updateFreeBlocks(devId, 1);
 
 	put_block(devId, getBMap(devId), buf);
 	
