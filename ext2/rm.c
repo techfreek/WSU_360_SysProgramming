@@ -184,5 +184,6 @@ int clearBlocks(INODE *ip, int devId) {
 	int i = 0;
 	for(; i < SINGLEINDIRECT && ip->i_block[i]; i++) {
 		bdealloc(devId, ip->i_block[i]);
+		ip->i_block[i] = 0; //clear so the next thing that gets this inode doesn't have these
 	}
 }
