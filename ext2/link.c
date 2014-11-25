@@ -157,6 +157,7 @@ int symlink(char *old_name, char *new_file) {
 				INODE *cInode = get_inode(devId, lnkIno);
 				char* i_name = &(cInode->i_block);
 				strncpy(i_name, old_name, 60);
+				cInode->i_size = strlen(old_name);
 				cInode->i_mode = LNK_MODE; //Set LNK type
 				put_inode(devId, lnkIno, cInode);
 				printf("Created SYMLNK\n");
